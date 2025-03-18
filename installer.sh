@@ -136,6 +136,8 @@ install_from_bin_package() {
     if ! on_path "$BIN_DST_DIR"; then
         info "\n${RED}WARNING${RESET}: It looks like '$BIN_DST_DIR' is not on your PATH! You will not be able to invoke wasp from the terminal by its name."
         info "  You can add it to your PATH by adding following line into your profile file (~/.profile or ~/.zshrc or ~/.bash_profile or ~/.bashrc or some other, depending on your configuration):"
+        # The $PATH in the following line is a literal, we don't want it to be interpolated
+        # shellcheck disable=SC2016
         info "      ${BOLD}"'export PATH=$PATH:'"$BIN_DST_DIR${RESET}"
     fi
 
@@ -175,12 +177,12 @@ cleanup_temp_dir() {
 
 # Print a message to stderr and exit with error code.
 die() {
-    printf "${RED}$@${RESET}\n" >&2
+    printf "${RED}%b${RESET}\n" "$@" >&2
     exit 1
 }
 
 info() {
-    printf "$@\n"
+    printf "%b\n" "$@"
 }
 
 # Download a URL to file using 'curl' or 'wget'.
@@ -190,20 +192,16 @@ dl_to_file() {
     MSG_ON_404="$3"
 
     if has_curl ; then
-        OUTPUT=$(curl ${QUIET:+-sS} --fail -L -o "$DST" "$FILE_URL")
-        if [ $? -ne 0 ]; then
-            echo "$OUTPUT" | grep --quiet 'The requested URL returned error: 404'
-            if [ $? -ne 0 ]; then
+        if ! OUTPUT=$(curl ${QUIET:+-sS} --fail -L -o "$DST" "$FILE_URL"); then
+            if ! echo "$OUTPUT" | grep --quiet 'The requested URL returned error: 404'; then
                 die "$MSG_ON_404"
             else
                 die "curl download failed: $FILE_URL"
             fi
         fi
     elif has_wget ; then
-        OUTPUT=$(wget ${QUIET:+-q} "-O$DST" "$FILE_URL")
-        if [ $? -ne 0 ]; then
-            echo "$OUTPUT" | grep --quiet 'ERROR 404: Not Found'
-            if [ $? -ne 0 ]; then
+        if ! OUTPUT=$(wget ${QUIET:+-q} "-O$DST" "$FILE_URL"); then
+            if ! echo "$OUTPUT" | grep --quiet 'ERROR 404: Not Found'; then
                 die "$MSG_ON_404"
             else
                 die "wget download failed: $FILE_URL"
@@ -266,6 +264,8 @@ send_telemetry() {
     fi
     CONTEXT=$(echo "$CONTEXT" | sed 's/^[ ]*//') # Remove any leading spaces.
 
+    # TODO: Use something POSIX-compliant instead of $RANDOM
+    # shellcheck disable=SC3028
     DATA='{ "api_key": "'$POSTHOG_WASP_PUBLIC_API_KEY'", "type": "capture", "event": "install-script:run", "distinct_id": "'$RANDOM$(date +'%s%N')'", "properties": { "os": "'$(get_os_info)'", "context": "'$CONTEXT'" } }'
 
     URL="https://app.posthog.com/capture"
