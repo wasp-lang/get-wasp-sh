@@ -249,6 +249,7 @@ on_path() {
 
 # Returns 0 if any of the listed env vars is set (regardless of its value). Otherwise returns 1.
 check_if_on_ci() {
+    # Inspired by the list of env vars we use in waspc/cli/.../Telemetry/Project.hs (wasp repo).
     if [ -n "$(printenv BUILD_ID BUILD_NUMBER CI CI_APP_ID CI_BUILD_ID CI_BUILD_NUMBER CI_NAME CONTINUOUS_INTEGRATION RUN_ID)" ]; then
 	return 0;
     else
@@ -261,8 +262,10 @@ send_telemetry() {
 
     CONTEXT=""
     if check_if_on_ci; then
-	CONTEXT="${CONTEXT}CI"
+	CONTEXT="${CONTEXT} CI"
     fi
+    CONTEXT=$(echo "$CONTEXT" | sed 's/^[ ]*//') # Remove any leading spaces.
+
     DATA='{ "api_key": "'$POSTHOG_WASP_PUBLIC_API_KEY'", "type": "capture", "event": "install-script:run", "distinct_id": "'$RANDOM$(date +'%s%N')'", "properties": { "os": "'$(get_os_info)'", "context": "'$CONTEXT'" } }'
 
     URL="https://app.posthog.com/capture"
