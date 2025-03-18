@@ -247,9 +247,27 @@ on_path() {
     echo ":$PATH_NORMALIZED:" | grep -q ":$QUERY_NORMALIZED:"
 }
 
+# Returns 0 if any of the listed env vars is set (regardless of its value). Otherwise returns 1.
+check_if_on_ci() {
+    # Inspired by the list of env vars we use in waspc/cli/.../Telemetry/Project.hs (wasp repo).
+    if [ -n "$(printenv BUILD_ID BUILD_NUMBER CI CI_APP_ID CI_BUILD_ID CI_BUILD_NUMBER CI_NAME CONTINUOUS_INTEGRATION RUN_ID)" ]; then
+	return 0;
+    else
+	return 1;
+    fi
+}
+
 send_telemetry() {
     POSTHOG_WASP_PUBLIC_API_KEY='CdDd2A0jKTI2vFAsrI9JWm3MqpOcgHz1bMyogAcwsE4'
-    DATA='{ "api_key": "'$POSTHOG_WASP_PUBLIC_API_KEY'", "type": "capture", "event": "install-script:run", "distinct_id": "'$RANDOM$(date +'%s%N')'", "properties": { "os": "'$(get_os_info)'" } }'
+
+    CONTEXT=""
+    if check_if_on_ci; then
+	CONTEXT="${CONTEXT} CI"
+    fi
+    CONTEXT=$(echo "$CONTEXT" | sed 's/^[ ]*//') # Remove any leading spaces.
+
+    DATA='{ "api_key": "'$POSTHOG_WASP_PUBLIC_API_KEY'", "type": "capture", "event": "install-script:run", "distinct_id": "'$RANDOM$(date +'%s%N')'", "properties": { "os": "'$(get_os_info)'", "context": "'$CONTEXT'" } }'
+
     URL="https://app.posthog.com/capture"
     HEADER="Content-Type: application/json"
 
