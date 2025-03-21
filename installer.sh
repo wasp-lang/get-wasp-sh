@@ -255,6 +255,15 @@ check_if_on_ci() {
     fi
 }
 
+random() {
+    # We can't use $RANDOM because it is not supported on `dash`
+    # (Ubuntu and Debian use it) 
+    # https://github.com/wasp-lang/wasp/issues/2560#issuecomment-2740577162
+    # Instead we use the portable workaround suggested by
+    # ShellCheck https://www.shellcheck.net/wiki/SC3028
+    awk 'BEGIN { srand(); print int(rand()*32768) }' /dev/null
+}
+
 send_telemetry() {
     POSTHOG_WASP_PUBLIC_API_KEY='CdDd2A0jKTI2vFAsrI9JWm3MqpOcgHz1bMyogAcwsE4'
 
@@ -264,9 +273,7 @@ send_telemetry() {
     fi
     CONTEXT=$(echo "$CONTEXT" | sed 's/^[ ]*//') # Remove any leading spaces.
 
-    # TODO: Use something POSIX-compliant instead of $RANDOM
-    # shellcheck disable=SC3028
-    DATA='{ "api_key": "'$POSTHOG_WASP_PUBLIC_API_KEY'", "type": "capture", "event": "install-script:run", "distinct_id": "'$RANDOM$(date +'%s%N')'", "properties": { "os": "'$(get_os_info)'", "context": "'$CONTEXT'" } }'
+    DATA='{ "api_key": "'$POSTHOG_WASP_PUBLIC_API_KEY'", "type": "capture", "event": "install-script:run", "distinct_id": "'$(random)$(date +'%s%N')'", "properties": { "os": "'$(get_os_info)'", "context": "'$CONTEXT'" } }'
 
     URL="https://app.posthog.com/capture"
     HEADER="Content-Type: application/json"
