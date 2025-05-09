@@ -125,7 +125,7 @@ install_from_bin_package() {
     #  we obtained using $HOME which is absolute, but if that changes
     #  and it is not absolute any more, .sh file generated below
     #  will not work properly.
-    printf '#!/bin/sh\nwaspc_datadir=%s/data %s/wasp-bin "$@"\n' "$DATA_DST_DIR" "$DATA_DST_DIR" \
+    printf '#!/bin/sh\nwaspc_datadir=%s/data exec %s/wasp-bin "$@"\n' "$DATA_DST_DIR" "$DATA_DST_DIR" \
            > "$BIN_DST_DIR/wasp"
     if ! chmod +x "$BIN_DST_DIR/wasp"; then
         die "Failed to make $BIN_DST_DIR/wasp executable."
