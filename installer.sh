@@ -36,90 +36,96 @@ done
 main() {
     trap cleanup_temp_dir EXIT
     send_telemetry >/dev/null 2>&1 &
-    install_based_on_os
+
+    version_name=$(decide_version_name)
+
+    # TODO: Consider installing into /usr/local/bin and /usr/local/share instead of into
+    #   ~/.local/share and ~/.local/bin, since those are always on the PATH and are standard
+    #  to install programs like this. But then we need to run some commands below with sudo.
+    data_dst_dir="$HOME_LOCAL_SHARE/wasp-lang/$version_name"
+    bin_dst_dir="$HOME_LOCAL_BIN"
+
+    if [ -z "$(ls -A "$data_dst_dir")" ]; then
+        package_url=$(decide_package_url_for_version "$version_name")
+        package_file=$(download_package_url "$version_name" "$package_url")
+        install_from_package_file "$package_file" "$data_dst_dir"
+    else
+        info "Found an existing installation on the disk, at $data_dst_dir. Using it instead.\n"
+    fi
+
+    link_wasp_version "$version_name" "$data_dst_dir" "$bin_dst_dir"
+    print_tips "$bin_dst_dir"
 }
 
-install_based_on_os() {
+decide_version_name() {
+    latest_version=$(get_latest_wasp_version)
+    version_name=${VERSION_ARG:-$latest_version}
+
+    latest_version_message=
+    if [ "$version_name" = "$latest_version" ]; then
+        latest_version_message="latest"
+    else
+        latest_version_message="latest is $latest_version"
+    fi
+
+    info "Installing wasp version $version_name ($latest_version_message).\n"
+
+    echo "$version_name"
+}
+
+decide_package_url_for_version() {
+    version_name=$1
+    asset_name=$(get_asset_name_for_os)
+    echo "https://github.com/wasp-lang/wasp/releases/download/v$version_name/$asset_name"
+}
+
+get_asset_name_for_os() {
     case "$(uname)" in
-    "Linux")
-        install_from_bin_package "wasp-linux-x86_64.tar.gz"
-        ;;
-    "Darwin")
-        install_from_bin_package "wasp-macos-x86_64.tar.gz"
-        ;;
+    "Linux") echo "wasp-linux-x86_64.tar.gz" ;;
+    "Darwin") echo "wasp-macos-x86_64.tar.gz" ;;
     *)
         die "Sorry, this installer does not support your operating system: $(uname)."
         ;;
     esac
 }
 
-get_os_info() {
-    case "$(uname)" in
-    "Linux")
-        echo "linux"
-        ;;
-    "Darwin")
-        echo "osx"
-        ;;
-    *)
-        echo "Unknown"
-        ;;
-    esac
+download_package_url() {
+    version_name=$1
+    package_url=$2
+
+    info "Downloading binary package to temporary dir.\n"
+
+    make_temp_dir
+    output_file="$WASP_TEMP_DIR/$version_name"
+    dl_to_file "$package_url" "$output_file" "Download failed: There is no wasp version ${version_name}\n"
+    echo "$output_file"
 }
 
-# Download a Wasp binary package and install it in $HOME_LOCAL_BIN.
-install_from_bin_package() {
-    bin_package_name=$1
+install_from_package_file() {
+    package_file=$1
+    data_dst_dir=$2
 
-    latest_version=$(get_latest_wasp_version)
-
-    if [ -z "$VERSION_ARG" ]; then
-        version_to_install=$latest_version
-    else
-        version_to_install=$VERSION_ARG
-    fi
-
-    if [ "$version_to_install" = "$latest_version" ]; then
-        latest_version_message="latest"
-    else
-        latest_version_message="latest is $latest_version"
-    fi
-
-    info "Installing wasp version $version_to_install ($latest_version_message).\n"
-
-    # TODO: Consider installing into /usr/local/bin and /usr/local/share instead of into
-    #   ~/.local/share and ~/.local/bin, since those are always on the PATH and are standard
-    #  to install programs like this. But then we need to run some commands below with sudo.
-
-    ##### Download and install the specified wasp release. #####
-
-    data_dst_dir="$HOME_LOCAL_SHARE/wasp-lang/$version_to_install"
     create_dir_if_missing "$data_dst_dir"
 
-    if [ -z "$(ls -A "$data_dst_dir")" ]; then
-        package_url="https://github.com/wasp-lang/wasp/releases/download/v${version_to_install}/${bin_package_name}"
-        make_temp_dir
-        info "Downloading binary package to temporary dir and unpacking it there...\n"
-        dl_to_file "$package_url" "$WASP_TEMP_DIR/$bin_package_name" "Installation failed: There is no wasp version $version_to_install"
-        echo ""
-
-        info "Installing wasp data to $data_dst_dir.\n"
-        if ! tar xzf "$WASP_TEMP_DIR/$bin_package_name" -C "$data_dst_dir"; then
-            die "Installing data to $data_dst_dir failed: unpacking binary package failed."
-        fi
-    else
-        info "Found an existing installation on the disk, at $data_dst_dir. Using it instead.\n"
+    info "Installing wasp data to $data_dst_dir.\n"
+    if ! tar xzf "$package_file" -C "$data_dst_dir"; then
+        die "Installing data to $data_dst_dir failed: unpacking binary package failed."
     fi
+}
 
-    ##### Create executable that uses installed wasp release. #####
+link_wasp_version() {
+    version_name=$1
+    data_dst_dir=$2
+    bin_dst_dir=$3
 
-    bin_dst_dir="$HOME_LOCAL_BIN"
+    bin_dst="$3/wasp"
+
     create_dir_if_missing "$bin_dst_dir"
 
-    if [ -e "$bin_dst_dir/wasp" ]; then
-        info "Configuring wasp executable at $bin_dst_dir/wasp to use wasp version $version_to_install."
+    if [ -e "$bin_dst" ]; then
+        info "Configuring wasp executable at $bin_dst to use wasp version $version_name."
     else
-        info "Installing wasp executable to $bin_dst_dir/wasp."
+        info "Installing wasp executable to $bin_dst."
     fi
     # TODO: I should make sure here that $data_dst_dir is abs path.
     #  It works for now because we set it to HOME_LOCAL_SHARE which
@@ -127,10 +133,14 @@ install_from_bin_package() {
     #  and it is not absolute any more, .sh file generated below
     #  will not work properly.
     printf '#!/bin/sh\nwaspc_datadir=%s/data exec %s/wasp-bin "$@"\n' "$data_dst_dir" "$data_dst_dir" \
-        >"$bin_dst_dir/wasp"
-    if ! chmod +x "$bin_dst_dir/wasp"; then
-        die "Failed to make $bin_dst_dir/wasp executable."
+        >"$bin_dst"
+    if ! chmod +x "$bin_dst"; then
+        die "Failed to make $bin_dst executable."
     fi
+}
+
+print_tips() {
+    bin_dst_dir=$1
 
     info "\n=============================================="
 
@@ -285,6 +295,20 @@ send_telemetry() {
             wget -q --post-data="$data" --header="$header" "$url" >/dev/null 2>&1
         fi
     fi
+}
+
+get_os_info() {
+    case "$(uname)" in
+    "Linux")
+        echo "linux"
+        ;;
+    "Darwin")
+        echo "osx"
+        ;;
+    *)
+        echo "Unknown"
+        ;;
+    esac
 }
 
 get_latest_wasp_version() {
