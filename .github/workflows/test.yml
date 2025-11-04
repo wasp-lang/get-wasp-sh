@@ -1,12 +1,12 @@
 on:
   push:
     branches:
-      - main
+      - master
       # TODO: remove before merging
       - cprecioso/add-testing
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   test:
