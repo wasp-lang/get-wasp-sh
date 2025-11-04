@@ -1,0 +1,27 @@
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - macos-15-intel
+        args:
+          - ""
+          - "-v 0.18.0"
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v5
+      - run: echo "PATH=$PATH:/root/.local/bin" >> "$GITHUB_ENV"
+      - run: installer.sh ${{ matrix.args }}
+      - run: wasp version
