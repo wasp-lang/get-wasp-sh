@@ -69,23 +69,23 @@ get_os_info() {
 
 # Download a Wasp binary package and install it in $HOME_LOCAL_BIN.
 install_from_bin_package() {
-    BIN_PACKAGE_NAME=$1
+    bin_package_name=$1
 
-    LATEST_VERSION=$(get_latest_wasp_version)
+    latest_version=$(get_latest_wasp_version)
 
     if [ -z "$VERSION_ARG" ]; then
-        VERSION_TO_INSTALL=$LATEST_VERSION
+        version_to_install=$latest_version
     else
-        VERSION_TO_INSTALL=$VERSION_ARG
+        version_to_install=$VERSION_ARG
     fi
 
-    if [ "$VERSION_TO_INSTALL" = "$LATEST_VERSION" ]; then
-        LATEST_VERSION_MESSAGE="latest"
+    if [ "$version_to_install" = "$latest_version" ]; then
+        latest_version_message="latest"
     else
-        LATEST_VERSION_MESSAGE="latest is $LATEST_VERSION"
+        latest_version_message="latest is $latest_version"
     fi
 
-    info "Installing wasp version $VERSION_TO_INSTALL ($LATEST_VERSION_MESSAGE).\n"
+    info "Installing wasp version $version_to_install ($latest_version_message).\n"
 
     # TODO: Consider installing into /usr/local/bin and /usr/local/share instead of into
     #   ~/.local/share and ~/.local/bin, since those are always on the PATH and are standard
@@ -93,57 +93,57 @@ install_from_bin_package() {
 
     ##### Download and install the specified wasp release. #####
 
-    DATA_DST_DIR="$HOME_LOCAL_SHARE/wasp-lang/$VERSION_TO_INSTALL"
-    create_dir_if_missing "$DATA_DST_DIR"
+    data_dst_dir="$HOME_LOCAL_SHARE/wasp-lang/$version_to_install"
+    create_dir_if_missing "$data_dst_dir"
 
-    if [ -z "$(ls -A "$DATA_DST_DIR")" ]; then
-        PACKAGE_URL="https://github.com/wasp-lang/wasp/releases/download/v${VERSION_TO_INSTALL}/${BIN_PACKAGE_NAME}"
+    if [ -z "$(ls -A "$data_dst_dir")" ]; then
+        package_url="https://github.com/wasp-lang/wasp/releases/download/v${version_to_install}/${bin_package_name}"
         make_temp_dir
         info "Downloading binary package to temporary dir and unpacking it there...\n"
-        dl_to_file "$PACKAGE_URL" "$WASP_TEMP_DIR/$BIN_PACKAGE_NAME" "Installation failed: There is no wasp version $VERSION_TO_INSTALL"
+        dl_to_file "$package_url" "$WASP_TEMP_DIR/$bin_package_name" "Installation failed: There is no wasp version $version_to_install"
         echo ""
 
-        info "Installing wasp data to $DATA_DST_DIR.\n"
-        if ! tar xzf "$WASP_TEMP_DIR/$BIN_PACKAGE_NAME" -C "$DATA_DST_DIR"; then
-            die "Installing data to $DATA_DST_DIR failed: unpacking binary package failed."
+        info "Installing wasp data to $data_dst_dir.\n"
+        if ! tar xzf "$WASP_TEMP_DIR/$bin_package_name" -C "$data_dst_dir"; then
+            die "Installing data to $data_dst_dir failed: unpacking binary package failed."
         fi
     else
-        info "Found an existing installation on the disk, at $DATA_DST_DIR. Using it instead.\n"
+        info "Found an existing installation on the disk, at $data_dst_dir. Using it instead.\n"
     fi
 
     ##### Create executable that uses installed wasp release. #####
 
-    BIN_DST_DIR="$HOME_LOCAL_BIN"
-    create_dir_if_missing "$BIN_DST_DIR"
+    bin_dst_dir="$HOME_LOCAL_BIN"
+    create_dir_if_missing "$bin_dst_dir"
 
-    if [ -e "$BIN_DST_DIR/wasp" ]; then
-        info "Configuring wasp executable at $BIN_DST_DIR/wasp to use wasp version $VERSION_TO_INSTALL."
+    if [ -e "$bin_dst_dir/wasp" ]; then
+        info "Configuring wasp executable at $bin_dst_dir/wasp to use wasp version $version_to_install."
     else
-        info "Installing wasp executable to $BIN_DST_DIR/wasp."
+        info "Installing wasp executable to $bin_dst_dir/wasp."
     fi
-    # TODO: I should make sure here that $DATA_DST_DIR is abs path.
+    # TODO: I should make sure here that $data_dst_dir is abs path.
     #  It works for now because we set it to HOME_LOCAL_SHARE which
     #  we obtained using $HOME which is absolute, but if that changes
     #  and it is not absolute any more, .sh file generated below
     #  will not work properly.
-    printf '#!/bin/sh\nwaspc_datadir=%s/data exec %s/wasp-bin "$@"\n' "$DATA_DST_DIR" "$DATA_DST_DIR" \
-        >"$BIN_DST_DIR/wasp"
-    if ! chmod +x "$BIN_DST_DIR/wasp"; then
-        die "Failed to make $BIN_DST_DIR/wasp executable."
+    printf '#!/bin/sh\nwaspc_datadir=%s/data exec %s/wasp-bin "$@"\n' "$data_dst_dir" "$data_dst_dir" \
+        >"$bin_dst_dir/wasp"
+    if ! chmod +x "$bin_dst_dir/wasp"; then
+        die "Failed to make $bin_dst_dir/wasp executable."
     fi
 
     info "\n=============================================="
 
-    if ! on_path "$BIN_DST_DIR"; then
-        info "\n${RED}WARNING${RESET}: It looks like '$BIN_DST_DIR' is not on your PATH! You will not be able to invoke wasp from the terminal by its name."
+    if ! on_path "$bin_dst_dir"; then
+        info "\n${RED}WARNING${RESET}: It looks like '$bin_dst_dir' is not on your PATH! You will not be able to invoke wasp from the terminal by its name."
         info "  You can add it to your PATH by adding following line into your profile file (~/.profile or ~/.zshrc or ~/.bash_profile or ~/.bashrc or some other, depending on your configuration):"
         # The $PATH in the following line is a literal, we don't want it to be interpolated
         # shellcheck disable=SC2016
-        info "      ${BOLD}"'export PATH=$PATH:'"$BIN_DST_DIR${RESET}"
+        info "      ${BOLD}"'export PATH=$PATH:'"$bin_dst_dir${RESET}"
     fi
 
     info "\n${GREEN}wasp has been successfully installed! To create your first app, do:${RESET}"
-    if ! on_path "$BIN_DST_DIR"; then
+    if ! on_path "$bin_dst_dir"; then
         info " - Add wasp to your PATH as described above."
     fi
     info " - ${BOLD}wasp new MyApp${RESET}\n"
@@ -188,24 +188,24 @@ info() {
 
 # Download a URL to file using 'curl' or 'wget'.
 dl_to_file() {
-    FILE_URL="$1"
-    DST="$2"
-    MSG_ON_404="$3"
+    file_url="$1"
+    dst="$2"
+    msg_on_404="$3"
 
     if has_curl; then
-        if ! OUTPUT=$(curl ${QUIET:+-sS} --fail -L -o "$DST" "$FILE_URL"); then
-            if ! echo "$OUTPUT" | grep --quiet 'The requested URL returned error: 404'; then
-                die "$MSG_ON_404"
+        if ! output=$(curl ${QUIET:+-sS} --fail -L -o "$dst" "$file_url"); then
+            if ! echo "$output" | grep --quiet 'The requested URL returned error: 404'; then
+                die "$msg_on_404"
             else
-                die "curl download failed: $FILE_URL"
+                die "curl download failed: $file_url"
             fi
         fi
     elif has_wget; then
-        if ! OUTPUT=$(wget ${QUIET:+-q} "-O$DST" "$FILE_URL"); then
-            if ! echo "$OUTPUT" | grep --quiet 'ERROR 404: Not Found'; then
-                die "$MSG_ON_404"
+        if ! output=$(wget ${QUIET:+-q} "-O$dst" "$file_url"); then
+            if ! echo "$output" | grep --quiet 'ERROR 404: Not Found'; then
+                die "$msg_on_404"
             else
-                die "wget download failed: $FILE_URL"
+                die "wget download failed: $file_url"
             fi
         fi
     else
@@ -238,12 +238,12 @@ on_path() {
     # If ~ is after : or if it is the first character in the path, replace it with expanded $HOME.
     # For example, if $PATH is ~/martin/bin:~/martin/~tmp/bin,
     # result will be /home/martin/bin:/home/martin/~tmp/bin .
-    PATH_NORMALIZED=$(printf '%s' "$PATH" | sed -e "s|:~|:$HOME|g" | sed -e "s|^~|$HOME|")
+    path_normalized=$(printf '%s' "$PATH" | sed -e "s|:~|:$HOME|g" | sed -e "s|^~|$HOME|")
 
     # Replace ~ with expanded $HOME if it is the first character in the query path.
-    QUERY_NORMALIZED=$(printf '%s' "$1" | sed -e "s|^~|$HOME|")
+    query_normalized=$(printf '%s' "$1" | sed -e "s|^~|$HOME|")
 
-    echo ":$PATH_NORMALIZED:" | grep -q ":$QUERY_NORMALIZED:"
+    echo ":$path_normalized:" | grep -q ":$query_normalized:"
 }
 
 # Returns 0 if any of the listed env vars is set (regardless of its value). Otherwise returns 1.
@@ -265,25 +265,24 @@ random() {
     awk 'BEGIN { srand(); print int(rand()*32768) }' /dev/null
 }
 
+POSTHOG_WASP_PUBLIC_API_KEY='CdDd2A0jKTI2vFAsrI9JWm3MqpOcgHz1bMyogAcwsE4'
 send_telemetry() {
-    POSTHOG_WASP_PUBLIC_API_KEY='CdDd2A0jKTI2vFAsrI9JWm3MqpOcgHz1bMyogAcwsE4'
-
-    CONTEXT=""
+    context=""
     if check_if_on_ci; then
-        CONTEXT="${CONTEXT} CI"
+        context="${context} CI"
     fi
-    CONTEXT=$(echo "$CONTEXT" | sed 's/^[ ]*//') # Remove any leading spaces.
+    context=$(echo "$context" | sed 's/^[ ]*//') # Remove any leading spaces.
 
-    DATA='{ "api_key": "'$POSTHOG_WASP_PUBLIC_API_KEY'", "type": "capture", "event": "install-script:run", "distinct_id": "'$(random)$(date +'%s%N')'", "properties": { "os": "'$(get_os_info)'", "context": "'$CONTEXT'" } }'
+    data='{ "api_key": "'$POSTHOG_WASP_PUBLIC_API_KEY'", "type": "capture", "event": "install-script:run", "distinct_id": "'$(random)$(date +'%s%N')'", "properties": { "os": "'$(get_os_info)'", "context": "'$context'" } }'
 
-    URL="https://app.posthog.com/capture"
-    HEADER="Content-Type: application/json"
+    url="https://app.posthog.com/capture"
+    header="Content-Type: application/json"
 
     if [ -z "$WASP_TELEMETRY_DISABLE" ]; then
         if has_curl; then
-            curl -sfL -d "$DATA" --header "$HEADER" "$URL" >/dev/null 2>&1
+            curl -sfL -d "$data" --header "$header" "$url" >/dev/null 2>&1
         elif has_wget; then
-            wget -q --post-data="$DATA" --header="$HEADER" "$URL" >/dev/null 2>&1
+            wget -q --post-data="$data" --header="$header" "$url" >/dev/null 2>&1
         fi
     fi
 }
