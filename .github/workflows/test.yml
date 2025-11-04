@@ -1,3 +1,5 @@
+name: Test installer
+
 on:
   push:
     branches:
@@ -17,13 +19,16 @@ jobs:
           - macos-latest
           - macos-15-intel
         args:
-          - ""
-          - "-v 0.18.0"
+          - name: bare
+            value: ""
+          - name: versioned
+            value: "-v 0.18.0"
 
+    name: Test installer (${{ matrix.os }}, ${{ matrix.args.name }})
     runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v5
       - run: echo "PATH=$PATH:/root/.local/bin" >> "$GITHUB_ENV"
-      - run: installer.sh ${{ matrix.args }}
+      - run: installer.sh ${{ matrix.args.value }}
       - run: wasp version
