@@ -183,7 +183,7 @@ die() {
 }
 
 info() {
-    printf "%b\n" "$@"
+    printf "%b\n" "$@" >&2
 }
 
 # Download a URL to file using 'curl' or 'wget'.
