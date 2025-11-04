@@ -34,7 +34,7 @@ jobs:
         with:
           node-version: "22"
 
-      - run: echo "PATH=$PATH:/root/.local/bin" >> "$GITHUB_ENV"
+      - run: echo "PATH=$PATH:$HOME/.local/bin" >> "$GITHUB_ENV"
       - run: ./installer.sh ${{ matrix.args.value }}
 
       - run: wasp version
