@@ -18,51 +18,52 @@ RESET="\033[0m"
 
 while [ $# -gt 0 ]; do
     case "$1" in
-        # -d|--dest)
-        #     DEST="$2"
-        #     shift 2
-        #     ;;
-        -v|--version)
-            VERSION_ARG="$2"
-            shift 2
-            ;;
-        *)
-            echo "Invalid argument: $1" >&2
-            exit 1
-            ;;
+    # -d|--dest)
+    #     DEST="$2"
+    #     shift 2
+    #     ;;
+    -v | --version)
+        VERSION_ARG="$2"
+        shift 2
+        ;;
+    *)
+        echo "Invalid argument: $1" >&2
+        exit 1
+        ;;
     esac
 done
 
 main() {
     trap cleanup_temp_dir EXIT
-    send_telemetry > /dev/null 2>&1 &
+    send_telemetry >/dev/null 2>&1 &
     install_based_on_os
 }
 
 install_based_on_os() {
     case "$(uname)" in
-        "Linux")
-            install_from_bin_package "wasp-linux-x86_64.tar.gz"
-            ;;
-        "Darwin")
-            install_from_bin_package "wasp-macos-x86_64.tar.gz"
-            ;;
-        *)
-            die "Sorry, this installer does not support your operating system: $(uname)."
+    "Linux")
+        install_from_bin_package "wasp-linux-x86_64.tar.gz"
+        ;;
+    "Darwin")
+        install_from_bin_package "wasp-macos-x86_64.tar.gz"
+        ;;
+    *)
+        die "Sorry, this installer does not support your operating system: $(uname)."
+        ;;
     esac
 }
 
 get_os_info() {
     case "$(uname)" in
-        "Linux")
-            echo "linux"
-            ;;
-        "Darwin")
-            echo "osx"
-            ;;
-        *)
-            echo "Unknown"
-            ;;
+    "Linux")
+        echo "linux"
+        ;;
+    "Darwin")
+        echo "osx"
+        ;;
+    *)
+        echo "Unknown"
+        ;;
     esac
 }
 
@@ -126,7 +127,7 @@ install_from_bin_package() {
     #  and it is not absolute any more, .sh file generated below
     #  will not work properly.
     printf '#!/bin/sh\nwaspc_datadir=%s/data exec %s/wasp-bin "$@"\n' "$DATA_DST_DIR" "$DATA_DST_DIR" \
-           > "$BIN_DST_DIR/wasp"
+        >"$BIN_DST_DIR/wasp"
     if ! chmod +x "$BIN_DST_DIR/wasp"; then
         die "Failed to make $BIN_DST_DIR/wasp executable."
     fi
@@ -169,7 +170,7 @@ make_temp_dir() {
 # Cleanup the temporary directory if it's been created.
 # Called automatically when the script exits.
 cleanup_temp_dir() {
-    if [ -n "$WASP_TEMP_DIR" ] ; then
+    if [ -n "$WASP_TEMP_DIR" ]; then
         rm -rf "$WASP_TEMP_DIR"
         WASP_TEMP_DIR=""
     fi
@@ -191,7 +192,7 @@ dl_to_file() {
     DST="$2"
     MSG_ON_404="$3"
 
-    if has_curl ; then
+    if has_curl; then
         if ! OUTPUT=$(curl ${QUIET:+-sS} --fail -L -o "$DST" "$FILE_URL"); then
             if ! echo "$OUTPUT" | grep --quiet 'The requested URL returned error: 404'; then
                 die "$MSG_ON_404"
@@ -199,7 +200,7 @@ dl_to_file() {
                 die "curl download failed: $FILE_URL"
             fi
         fi
-    elif has_wget ; then
+    elif has_wget; then
         if ! OUTPUT=$(wget ${QUIET:+-q} "-O$DST" "$FILE_URL"); then
             if ! echo "$OUTPUT" | grep --quiet 'ERROR 404: Not Found'; then
                 die "$MSG_ON_404"
@@ -224,7 +225,7 @@ has_curl() {
 
 # Check whether the given command exists.
 has_cmd() {
-    command -v "$1" > /dev/null 2>&1
+    command -v "$1" >/dev/null 2>&1
 }
 
 # Check whether the given (query) path is listed in the PATH environment variable.
@@ -249,15 +250,15 @@ on_path() {
 check_if_on_ci() {
     # Inspired by the list of env vars we use in waspc/cli/.../Telemetry/Project.hs (wasp repo).
     if [ -n "$(printenv BUILD_ID BUILD_NUMBER CI CI_APP_ID CI_BUILD_ID CI_BUILD_NUMBER CI_NAME CONTINUOUS_INTEGRATION RUN_ID)" ]; then
-	return 0;
+        return 0
     else
-	return 1;
+        return 1
     fi
 }
 
 random() {
     # We can't use $RANDOM because it is not supported on `dash`
-    # (Ubuntu and Debian use it) 
+    # (Ubuntu and Debian use it)
     # https://github.com/wasp-lang/wasp/issues/2560#issuecomment-2740577162
     # Instead we use the portable workaround suggested by
     # ShellCheck https://www.shellcheck.net/wiki/SC3028
@@ -269,7 +270,7 @@ send_telemetry() {
 
     CONTEXT=""
     if check_if_on_ci; then
-	CONTEXT="${CONTEXT} CI"
+        CONTEXT="${CONTEXT} CI"
     fi
     CONTEXT=$(echo "$CONTEXT" | sed 's/^[ ]*//') # Remove any leading spaces.
 
@@ -280,9 +281,9 @@ send_telemetry() {
 
     if [ -z "$WASP_TELEMETRY_DISABLE" ]; then
         if has_curl; then
-            curl -sfL -d "$DATA" --header "$HEADER" "$URL" > /dev/null 2>&1
+            curl -sfL -d "$DATA" --header "$HEADER" "$URL" >/dev/null 2>&1
         elif has_wget; then
-            wget -q --post-data="$DATA" --header="$HEADER" "$URL" > /dev/null 2>&1
+            wget -q --post-data="$DATA" --header="$HEADER" "$URL" >/dev/null 2>&1
         fi
     fi
 }
