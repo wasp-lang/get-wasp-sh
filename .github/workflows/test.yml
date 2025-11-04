@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - master
-      # TODO: remove before merging
-      - cprecioso/add-testing
   pull_request:
     branches:
       - master
