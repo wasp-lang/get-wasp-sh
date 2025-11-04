@@ -9,6 +9,7 @@
 HOME_LOCAL_BIN="$HOME/.local/bin"
 HOME_LOCAL_SHARE="$HOME/.local/share"
 VERSION_ARG=
+FILE_ARG=
 
 RED="\033[31m"
 GREEN="\033[32m"
@@ -23,6 +24,10 @@ while [ $# -gt 0 ]; do
     #     ;;
     -v | --version)
         VERSION_ARG="$2"
+        shift 2
+        ;;
+    -f | --file)
+        FILE_ARG="$2"
         shift 2
         ;;
     *)
@@ -44,12 +49,20 @@ main() {
     data_dst_dir="$HOME_LOCAL_SHARE/wasp-lang/$version_name"
     bin_dst_dir="$HOME_LOCAL_BIN"
 
-    if [ -z "$(ls -A "$data_dst_dir")" ]; then
-        package_url=$(decide_package_url_for_version "$version_name")
-        package_file=$(download_package_url "$version_name" "$package_url")
-        install_from_package_file "$package_file" "$data_dst_dir"
+    if [ -n "$FILE_ARG" ]; then
+        if [ -f "$FILE_ARG" ]; then
+            install_from_package_file "$FILE_ARG" "$data_dst_dir"
+        else
+            die "The specified file does not exist: $FILE_ARG"
+        fi
     else
-        info "Found an existing installation on the disk, at $data_dst_dir. Using it instead.\n"
+        if [ -z "$(ls -A "$data_dst_dir")" ]; then
+            package_url=$(decide_package_url_for_version "$version_name")
+            package_file=$(download_package_url "$version_name" "$package_url")
+            install_from_package_file "$package_file" "$data_dst_dir"
+        else
+            info "Found an existing installation on the disk, at $data_dst_dir. Using it instead.\n"
+        fi
     fi
 
     link_wasp_version "$version_name" "$data_dst_dir" "$bin_dst_dir"
@@ -57,19 +70,25 @@ main() {
 }
 
 decide_version_name() {
-    latest_version=$(get_latest_wasp_version)
-    version_name=${VERSION_ARG:-$latest_version}
+    if [ -n "$FILE_ARG" ]; then
+        info "Installing wasp from file: $FILE_ARG\n"
 
-    latest_version_message=
-    if [ "$version_name" = "$latest_version" ]; then
-        latest_version_message="latest"
+        echo "unknown"
     else
-        latest_version_message="latest is $latest_version"
+        latest_version=$(get_latest_wasp_version)
+        version_name=${VERSION_ARG:-$latest_version}
+
+        latest_version_message=
+        if [ "$version_name" = "$latest_version" ]; then
+            latest_version_message="latest"
+        else
+            latest_version_message="latest is $latest_version"
+        fi
+
+        info "Installing wasp version $version_name ($latest_version_message).\n"
+
+        echo "$version_name"
     fi
-
-    info "Installing wasp version $version_name ($latest_version_message).\n"
-
-    echo "$version_name"
 }
 
 decide_package_url_for_version() {
