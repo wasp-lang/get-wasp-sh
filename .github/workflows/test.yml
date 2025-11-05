@@ -47,23 +47,9 @@ jobs:
 
       - name: Download installer package
         if: matrix.args.needs-download == true
-        run: |
-          run_id=$(
-            gh run list \
-              --repo wasp-lang/wasp \
-              --workflow CI \
-              --branch main \
-              --status success \
-              --limit 1 \
-              --json databaseId \
-              --jq '.[0].databaseId'
-          )
-          gh run download $run_id \
-          --repo wasp-lang/wasp \
-          --name $package_name
-        env:
-          GH_TOKEN: ${{ github.token }}
-          package_name: wasp-cli-${{ runner.os == 'Linux' && 'linux' || 'macos' }}-${{ runner.arch == 'ARM64' && 'aarch64' || 'x86_64' }}
+        # TODO: Change the reference to `main` once that PR is merged:
+        # https://github.com/wasp-lang/wasp/pull/3304
+        uses: wasp-lang/wasp/.github/actions/fetch-nightly-cli@cprecioso/create-nightly-action
 
       - name: Edit PATH
         run: echo "PATH=$PATH:$HOME/.local/bin" >> "$GITHUB_ENV"
