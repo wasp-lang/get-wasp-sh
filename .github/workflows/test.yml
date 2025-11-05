@@ -23,6 +23,9 @@ jobs:
             value: ""
           - name: versioned
             value: "-v 0.18.0"
+          - name: file path
+            value: "-f ./wasp-*.tar.gz"
+            needs-download: true
         exclude:
           # Dash is not available on macOS.
           - { os: macos-latest, shell: dash }
@@ -41,6 +44,25 @@ jobs:
       - name: Install shell
         if: runner.os == 'Linux'
         run: sudo apt-get install -y ${{ matrix.shell }}
+
+      - name: Download installer package
+        if: matrix.args.needs-download == true
+        run: |
+          run_id=$(
+            gh run list \
+              --repo wasp-lang/wasp \
+              --branch main \
+              --status completed \
+              --event push \
+              --limit 1 \
+              --json databaseId \
+              --jq '.[0].databaseId'
+          )
+          gh run download $run_id \
+          --repo wasp-lang/wasp \
+          --name $package_name
+        env:
+          package_name: wasp-cli-${{ runner.os == 'Linux' && 'linux' || 'macos' }}-${{ runner.arch == 'ARM64' && 'aarch64' || 'x86_64' }}
 
       - name: Edit PATH
         run: echo "PATH=$PATH:$HOME/.local/bin" >> "$GITHUB_ENV"
