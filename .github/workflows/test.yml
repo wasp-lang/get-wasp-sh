@@ -26,6 +26,7 @@ jobs:
           - name: versioned
             value: "-v 0.18.0"
         exclude:
+          # Dash is not available on macOS by default.
           - { os: macos-latest, shell: dash }
           - { os: macos-15-intel, shell: dash }
 
@@ -39,7 +40,14 @@ jobs:
         with:
           node-version: "22"
 
-      - run: echo "PATH=$PATH:$HOME/.local/bin" >> "$GITHUB_ENV"
-      - run: ${{ matrix.shell }} ./installer.sh ${{ matrix.args.value }}
+      - name: Install shell
+        if: runner.os == 'Linux'
+        run: sudo apt-get install ${{ matrix.shell }}
+
+      - name: Edit PATH
+        run: echo "PATH=$PATH:$HOME/.local/bin" >> "$GITHUB_ENV"
+
+      - name: Run installer
+        run: ${{ matrix.shell }} ./installer.sh ${{ matrix.args.value }}
 
       - run: wasp version
