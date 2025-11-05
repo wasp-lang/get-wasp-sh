@@ -24,7 +24,7 @@ jobs:
           - name: versioned
             value: "-v 0.18.0"
         exclude:
-          # Dash is not available on macOS by default.
+          # Dash is not available on macOS.
           - { os: macos-latest, shell: dash }
           - { os: macos-15-intel, shell: dash }
 
@@ -40,7 +40,7 @@ jobs:
 
       - name: Install shell
         if: runner.os == 'Linux'
-        run: sudo apt-get install ${{ matrix.shell }}
+        run: sudo apt-get install -y ${{ matrix.shell }}
 
       - name: Edit PATH
         run: echo "PATH=$PATH:$HOME/.local/bin" >> "$GITHUB_ENV"
