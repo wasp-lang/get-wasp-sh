@@ -50,19 +50,9 @@ main() {
     bin_dst_dir="$HOME_LOCAL_BIN"
 
     if [ -n "$FILE_ARG" ]; then
-        if [ -f "$FILE_ARG" ]; then
-            install_from_package_file "$FILE_ARG" "$data_dst_dir"
-        else
-            die "The specified file does not exist: $FILE_ARG"
-        fi
+        install_using_file_arg "$data_dst_dir"
     else
-        if [ -z "$(ls -A "$data_dst_dir")" ]; then
-            package_url=$(decide_package_url_for_version "$version_name")
-            package_file=$(download_package_url "$version_name" "$package_url")
-            install_from_package_file "$package_file" "$data_dst_dir"
-        else
-            info "Found an existing installation on the disk, at $data_dst_dir. Using it instead.\n"
-        fi
+        install_using_version "$version_name" "$data_dst_dir"
     fi
 
     link_wasp_version "$version_name" "$data_dst_dir" "$bin_dst_dir"
@@ -88,6 +78,29 @@ decide_version_name() {
         info "Installing wasp version $version_name ($latest_version_message).\n"
 
         echo "$version_name"
+    fi
+}
+
+install_using_file_arg() {
+    data_dst_dir=$1
+
+    if [ -f "$FILE_ARG" ]; then
+        install_from_package_file "$FILE_ARG" "$data_dst_dir"
+    else
+        die "The specified file does not exist: $FILE_ARG"
+    fi
+}
+
+install_using_version() {
+    version_name=$1
+    data_dst_dir=$2
+
+    if [ -z "$(ls -A "$data_dst_dir")" ]; then
+        package_url=$(decide_package_url_for_version "$version_name")
+        package_file=$(download_package_url "$version_name" "$package_url")
+        install_from_package_file "$package_file" "$data_dst_dir"
+    else
+        info "Found an existing installation on the disk, at $data_dst_dir. Using it instead.\n"
     fi
 }
 
