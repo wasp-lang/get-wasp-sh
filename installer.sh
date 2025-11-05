@@ -8,7 +8,6 @@
 #       Link to Uninstall command: https://github.com/wasp-lang/wasp/blob/main/waspc/cli/src/Wasp/Cli/FileSystem.hs#L36
 HOME_LOCAL_BIN="$HOME/.local/bin"
 HOME_LOCAL_SHARE="$HOME/.local/share"
-WASP_TEMP_DIR=
 VERSION_ARG=
 
 RED="\033[31m"
@@ -95,8 +94,8 @@ download_package_url() {
 
     info "Downloading binary package to temporary dir.\n"
 
-    make_temp_dir
-    output_file="$WASP_TEMP_DIR/$version_name"
+    temp_dir=$(ensure_temp_dir)
+    output_file="$temp_dir/$version_name"
     dl_to_file "$package_url" "$output_file" "Download failed: There is no wasp version ${version_name}\n"
     echo "$output_file"
 }
@@ -171,10 +170,16 @@ create_dir_if_missing() {
     fi
 }
 
+# Don't use directly, use the ensure_temp_dir function.
+WASP_TEMP_DIR=
+
 # Creates a temporary directory, which will be cleaned up automatically
-# when the script finishes
-make_temp_dir() {
-    WASP_TEMP_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t wasp)"
+# when the script finishes, and returns its path.
+ensure_temp_dir() {
+    if [ -z "$WASP_TEMP_DIR" ]; then
+        WASP_TEMP_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t wasp)"
+    fi
+    echo "$WASP_TEMP_DIR"
 }
 
 # Cleanup the temporary directory if it's been created.
