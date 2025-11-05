@@ -16,13 +16,20 @@ jobs:
           - ubuntu-latest
           - macos-latest
           - macos-15-intel
+        shell:
+          - dash
+          - bash
+          - zsh
         args:
           - name: bare
             value: ""
           - name: versioned
             value: "-v 0.18.0"
+        exclude:
+          - { os: macos-latest, shell: dash }
+          - { os: macos-15-intel, shell: dash }
 
-    name: Test installer (${{ matrix.os }}, ${{ matrix.args.name }})
+    name: Test installer (${{ matrix.os }}, ${{ matrix.shell }}, ${{ matrix.args.name }})
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -33,6 +40,6 @@ jobs:
           node-version: "22"
 
       - run: echo "PATH=$PATH:$HOME/.local/bin" >> "$GITHUB_ENV"
-      - run: ./installer.sh ${{ matrix.args.value }}
+      - run: ${{ matrix.shell }} ./installer.sh ${{ matrix.args.value }}
 
       - run: wasp version
