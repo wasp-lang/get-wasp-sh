@@ -51,9 +51,9 @@ jobs:
           run_id=$(
             gh run list \
               --repo wasp-lang/wasp \
+              --workflow CI \
               --branch main \
-              --status completed \
-              --event push \
+              --status success \
               --limit 1 \
               --json databaseId \
               --jq '.[0].databaseId'
