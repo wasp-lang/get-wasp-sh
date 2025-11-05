@@ -61,28 +61,18 @@ main() {
 
 decide_version_name() {
     if [ -n "$FILE_ARG" ]; then
-        info "Installing wasp from file: $FILE_ARG\n"
-
         echo "unknown"
     else
         latest_version=$(get_latest_wasp_version)
         version_name=${VERSION_ARG:-$latest_version}
-
-        latest_version_message=
-        if [ "$version_name" = "$latest_version" ]; then
-            latest_version_message="latest"
-        else
-            latest_version_message="latest is $latest_version"
-        fi
-
-        info "Installing wasp version $version_name ($latest_version_message).\n"
-
         echo "$version_name"
     fi
 }
 
 install_using_file_arg() {
     data_dst_dir=$1
+
+    info "Installing wasp from file: $FILE_ARG\n"
 
     if [ -f "$FILE_ARG" ]; then
         install_from_package_file "$FILE_ARG" "$data_dst_dir"
@@ -94,6 +84,17 @@ install_using_file_arg() {
 install_using_version() {
     version_name=$1
     data_dst_dir=$2
+
+    latest_version=$(get_latest_wasp_version)
+
+    latest_version_message=
+    if [ "$version_name" = "$latest_version" ]; then
+        latest_version_message="latest"
+    else
+        latest_version_message="latest is $latest_version"
+    fi
+
+    info "Installing wasp version $version_name ($latest_version_message).\n"
 
     if [ -z "$(ls -A "$data_dst_dir")" ]; then
         package_url=$(decide_package_url_for_version "$version_name")
@@ -348,12 +349,33 @@ get_os_info() {
     esac
 }
 
+# Don't use directly, use the get_latest_wasp_version function.
+WASP_LATEST_VERSION=
+
+# Gets the latest wasp version from GitHub releases. Caches the result so we only
+# do the network request once.
 get_latest_wasp_version() {
-    if has_curl; then
-        curl -LIs -o /dev/null -w '%{url_effective}' https://github.com/wasp-lang/wasp/releases/latest | awk -F/ '{print $NF}' | cut -c2-
-    elif has_wget; then
-        wget --spider --max-redirect=0 https://github.com/wasp-lang/wasp/releases/latest 2>&1 | awk '/Location: /,// { print }' | awk '{print $2}' | awk -F/ '{print $NF}' | cut -c2-
+    if [ -z "$WASP_LATEST_VERSION" ]; then
+        releases_url="https://github.com/wasp-lang/wasp/releases/latest"
+
+        if has_curl; then
+            WASP_LATEST_VERSION=$(
+                curl -LIs -o /dev/null -w '%{url_effective}' $releases_url |
+                    awk -F/ '{print $NF}' |
+                    cut -c2-
+            )
+        elif has_wget; then
+            WASP_LATEST_VERSION=$(
+                wget --spider --max-redirect=0 $releases_url 2>&1 |
+                    awk '/Location: /,// { print }' |
+                    awk '{print $2}' |
+                    awk -F/ '{print $NF}' |
+                    cut -c2-
+            )
+        fi
     fi
+
+    echo "$WASP_LATEST_VERSION"
 }
 
 main
