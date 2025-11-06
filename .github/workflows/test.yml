@@ -7,6 +7,14 @@ on:
   pull_request:
 
 jobs:
+  lint:
+    name: Lint script
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+      - run: shellcheck installer.sh
+
   test:
     strategy:
       matrix:
