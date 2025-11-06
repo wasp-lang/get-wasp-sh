@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/
 
 # NOTE: Heavily inspired by get-stack.hs script for installing stack.
 # https://raw.githubusercontent.com/commercialhaskell/stack/stable/etc/scripts/get-stack.sh
