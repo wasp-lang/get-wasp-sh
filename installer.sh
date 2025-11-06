@@ -46,7 +46,7 @@ main() {
     # TODO: Consider installing into /usr/local/bin and /usr/local/share instead of into
     #   ~/.local/share and ~/.local/bin, since those are always on the PATH and are standard
     #  to install programs like this. But then we need to run some commands below with sudo.
-    data_dst_dir="$HOME_LOCAL_SHARE/wasp-lang/$version_name"
+    data_dsts_dir="$HOME_LOCAL_SHARE/wasp-lang/$version_name"
     bin_dst_dir="$HOME_LOCAL_BIN"
 
     if [ -n "$FILE_ARG" ]; then
