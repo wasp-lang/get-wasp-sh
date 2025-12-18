@@ -9,7 +9,6 @@
 HOME_LOCAL_BIN="$HOME/.local/bin"
 HOME_LOCAL_SHARE="$HOME/.local/share"
 VERSION_ARG=
-FILE_ARG=
 
 RED="\033[31m"
 GREEN="\033[32m"
@@ -24,10 +23,6 @@ while [ $# -gt 0 ]; do
     #     ;;
     -v | --version)
         VERSION_ARG="$2"
-        shift 2
-        ;;
-    -f | --file)
-        FILE_ARG="$2"
         shift 2
         ;;
     *)
@@ -49,39 +44,19 @@ main() {
     data_dst_dir="$HOME_LOCAL_SHARE/wasp-lang/$version_name"
     bin_dst_dir="$HOME_LOCAL_BIN"
 
-    if [ -n "$FILE_ARG" ]; then
-        install_using_file_arg "$data_dst_dir"
-    else
-        install_using_version "$version_name" "$data_dst_dir"
-    fi
+    install_version "$version_name" "$data_dst_dir"
 
     link_wasp_version "$version_name" "$data_dst_dir" "$bin_dst_dir"
     print_tips "$bin_dst_dir"
 }
 
 decide_version_name() {
-    if [ -n "$FILE_ARG" ]; then
-        echo "unknown"
-    else
-        latest_version=$(get_latest_wasp_version)
-        version_name=${VERSION_ARG:-$latest_version}
-        echo "$version_name"
-    fi
+    latest_version=$(get_latest_wasp_version)
+    version_name=${VERSION_ARG:-$latest_version}
+    echo "$version_name"
 }
 
-install_using_file_arg() {
-    data_dst_dir=$1
-
-    info "Installing wasp from file: $FILE_ARG\n"
-
-    if [ -f "$FILE_ARG" ]; then
-        install_from_package_file "$FILE_ARG" "$data_dst_dir"
-    else
-        die "The specified file does not exist: $FILE_ARG"
-    fi
-}
-
-install_using_version() {
+install_version() {
     version_name=$1
     data_dst_dir=$2
 
