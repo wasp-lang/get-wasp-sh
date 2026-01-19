@@ -271,7 +271,9 @@ on_path() {
 
 # Returns 0 if any of the listed env vars is set (regardless of its value). Otherwise returns 1.
 check_if_on_ci() {
-    # Inspired by the list of env vars we use in waspc/cli/.../Telemetry/Project.hs (wasp repo).
+    # Keep in sync with the same list in:
+    # - https://github.com/wasp-lang/wasp/blob/main/scripts/make-npm-packages/templates/main-package/postinstall.js
+    # - https://github.com/wasp-lang/wasp/blob/main/waspc/src/Wasp/Util.hs
     if [ -n "$(printenv BUILD_ID BUILD_NUMBER CI CI_APP_ID CI_BUILD_ID CI_BUILD_NUMBER CI_NAME CONTINUOUS_INTEGRATION RUN_ID)" ]; then
         return 0
     else
