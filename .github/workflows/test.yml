@@ -80,6 +80,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
       - name: Install shell
         if: runner.os == 'Linux'
         run: sudo apt-get install -y ${{ matrix.shell }}
