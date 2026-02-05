@@ -50,39 +50,33 @@ main() {
         exit 0
     fi
 
-    # Require version argument if specified in VERSION_ARG
-    if [ -n "$VERSION_ARG" ]; then
-        # Check version restrictions - reject when requested version >= migration version
-        if version_gte "$VERSION_ARG" "$NPM_MIGRATION_VERSION"; then
-            die "Wasp version $VERSION_ARG and later must be installed via npm.\n\nPlease run: npm install -g @wasp.sh/wasp-cli@$VERSION_ARG\n\nTo migrate from installer to npm, run:\n  curl -sSL https://get.wasp.sh/installer.sh | sh -s -- migrate-to-npm"
-        fi
-
-        # Warn about installing old version
-        info "${RED}WARNING${RESET}: You are installing an older version of Wasp ($VERSION_ARG)."
-        info "Starting with Wasp $NPM_MIGRATION_VERSION, the installer is deprecated and npm is the preferred installation method:\n  npm install -g @wasp.sh/wasp-cli\n"
+    # Require version argument
+    if [ -z "$VERSION_ARG" ]; then
+        die "A version argument is required.\n\nUsage: curl -sSL https://get.wasp.sh/installer.sh | sh -s -- -v <version>\n\nFor Wasp $NPM_MIGRATION_VERSION and later, please use npm:\n  npm install -g @wasp.sh/wasp-cli"
     fi
+
+    # Check version restrictions - reject when requested version >= migration version
+    if version_gte "$VERSION_ARG" "$NPM_MIGRATION_VERSION"; then
+        die "Wasp version $VERSION_ARG and later must be installed via npm.\n\nPlease run: npm install -g @wasp.sh/wasp-cli@$VERSION_ARG\n\nTo migrate from installer to npm, run:\n  curl -sSL https://get.wasp.sh/installer.sh | sh -s -- migrate-to-npm"
+    fi
+
+    # Warn about installing old version
+    info "${RED}WARNING${RESET}: You are installing an older version of Wasp ($VERSION_ARG)."
+    info "Starting with Wasp $NPM_MIGRATION_VERSION, the installer is deprecated and npm is the preferred installation method:\n  npm install -g @wasp.sh/wasp-cli\n"
 
     trap cleanup_temp_dir EXIT
     send_telemetry >/dev/null 2>&1 &
 
-    version_name=$(decide_version_name)
-
     # TODO: Consider installing into /usr/local/bin and /usr/local/share instead of into
     #   ~/.local/share and ~/.local/bin, since those are always on the PATH and are standard
     #  to install programs like this. But then we need to run some commands below with sudo.
-    data_dst_dir="$HOME_LOCAL_SHARE/wasp-lang/$version_name"
+    data_dst_dir="$HOME_LOCAL_SHARE/wasp-lang/$VERSION_ARG"
     bin_dst_dir="$HOME_LOCAL_BIN"
 
-    install_version "$version_name" "$data_dst_dir"
+    install_version "$VERSION_ARG" "$data_dst_dir"
 
-    link_wasp_version "$version_name" "$data_dst_dir" "$bin_dst_dir"
+    link_wasp_version "$VERSION_ARG" "$data_dst_dir" "$bin_dst_dir"
     print_tips "$bin_dst_dir"
-}
-
-decide_version_name() {
-    latest_version=$(get_latest_wasp_version)
-    version_name=${VERSION_ARG:-$latest_version}
-    echo "$version_name"
 }
 
 # Migrate from installer-based Wasp to npm-based Wasp.
@@ -133,16 +127,7 @@ install_version() {
     version_name=$1
     data_dst_dir=$2
 
-    latest_version=$(get_latest_wasp_version)
-
-    latest_version_message=
-    if [ "$version_name" = "$latest_version" ]; then
-        latest_version_message="latest"
-    else
-        latest_version_message="latest is $latest_version"
-    fi
-
-    info "Installing wasp version $version_name ($latest_version_message).\n"
+    info "Installing wasp version $version_name.\n"
 
     if [ -z "$(ls -A "$data_dst_dir")" ]; then
         package_url=$(decide_package_url_for_version "$version_name")
@@ -397,35 +382,6 @@ get_os_info() {
         echo "Unknown"
         ;;
     esac
-}
-
-# Don't use directly, use the get_latest_wasp_version function.
-WASP_LATEST_VERSION=
-
-# Gets the latest wasp version from GitHub releases. Caches the result so we only
-# do the network request once.
-get_latest_wasp_version() {
-    if [ -z "$WASP_LATEST_VERSION" ]; then
-        releases_url="https://github.com/wasp-lang/wasp/releases/latest"
-
-        if has_curl; then
-            WASP_LATEST_VERSION=$(
-                curl -LIs -o /dev/null -w '%{url_effective}' $releases_url |
-                    awk -F/ '{print $NF}' |
-                    cut -c2-
-            )
-        elif has_wget; then
-            WASP_LATEST_VERSION=$(
-                wget --spider --max-redirect=0 $releases_url 2>&1 |
-                    awk '/Location: /,// { print }' |
-                    awk '{print $2}' |
-                    awk -F/ '{print $NF}' |
-                    cut -c2-
-            )
-        fi
-    fi
-
-    echo "$WASP_LATEST_VERSION"
 }
 
 main
