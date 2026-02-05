@@ -3,11 +3,14 @@
 # NOTE: Heavily inspired by get-stack.hs script for installing stack.
 # https://raw.githubusercontent.com/commercialhaskell/stack/stable/etc/scripts/get-stack.sh
 
-# NOTE: These paths are used in the Wasp uninstall command, if you change it here,
-#       change it there as well.
-#       Link to Uninstall command: https://github.com/wasp-lang/wasp/blob/main/waspc/cli/src/Wasp/Cli/FileSystem.hs#L36
+# NOTE: These paths are also defined in:
+# - https://github.com/wasp-lang/wasp/blob/main/waspc/cli/src/Wasp/Cli/FileSystem.hs
+# - https://github.com/wasp-lang/wasp/blob/main/scripts/make-npm-packages/templates/main-package/preinstall.js
+# TODO: Do not hardcode: https://github.com/wasp-lang/wasp/issues/980
 HOME_LOCAL_BIN="$HOME/.local/bin"
 HOME_LOCAL_SHARE="$HOME/.local/share"
+WASP_LANG_DIR="$HOME_LOCAL_SHARE/wasp-lang"
+NPM_MARKER_FILE="$WASP_LANG_DIR/.uses-npm"
 VERSION_ARG=
 
 RED="\033[31m"
@@ -25,6 +28,10 @@ while [ $# -gt 0 ]; do
         VERSION_ARG="$2"
         shift 2
         ;;
+    migrate-to-npm)
+        COMMAND="migrate-to-npm"
+        shift
+        ;;
     *)
         echo "Invalid argument: $1" >&2
         exit 1
@@ -33,6 +40,15 @@ while [ $# -gt 0 ]; do
 done
 
 main() {
+    if [ -f "$NPM_MARKER_FILE" ]; then
+        die "You are already using Wasp through npm.\n\nTo install Wasp, run:\n  npm install -g @wasp.sh/wasp-cli\n\nIf you need to use the installer again, first uninstall Wasp through npm, and remove the marker file at $NPM_MARKER_FILE."
+    fi
+
+    if [ "$COMMAND" = "migrate-to-npm" ]; then
+        migrate_to_npm
+        exit 0
+    fi
+
     trap cleanup_temp_dir EXIT
     send_telemetry >/dev/null 2>&1 &
 
@@ -54,6 +70,37 @@ decide_version_name() {
     latest_version=$(get_latest_wasp_version)
     version_name=${VERSION_ARG:-$latest_version}
     echo "$version_name"
+}
+
+# Migrate from installer-based Wasp to npm-based Wasp.
+migrate_to_npm() {
+    info "Migrating from installer-based Wasp to npm-based Wasp...\n"
+
+    # Remove installer Wasp binary
+    wasp_bin="$HOME_LOCAL_BIN/wasp"
+    if [ -f "$wasp_bin" ]; then
+        info "Removing Wasp executable at $wasp_bin..."
+        rm -f "$wasp_bin" || die "Failed to remove $wasp_bin"
+    fi
+
+    # Remove version directories but keep the wasp-lang dir for the marker
+    if [ -d "$WASP_LANG_DIR" ]; then
+        info "Removing installer version directories..."
+        for dir in "$WASP_LANG_DIR"/*/; do
+            info "Removing $dir..."
+            if [ -d "$dir" ]; then
+                rm -rf "$dir" || die "Failed to remove $dir"
+            fi
+        done
+    fi
+
+    # Create marker file (ensure directory exists)
+    create_dir_if_missing "$WASP_LANG_DIR"
+    touch "$NPM_MARKER_FILE" || die "Failed to create npm marker file at $NPM_MARKER_FILE"
+
+    info "\n${GREEN}Ready for the next step!${RESET}\n"
+    info "Now you can install Wasp via npm, running the following command:"
+    info "  ${BOLD}npm install -g @wasp.sh/wasp-cli${RESET}\n"
 }
 
 install_version() {
