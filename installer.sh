@@ -85,7 +85,6 @@ decide_version_name() {
     echo "$version_name"
 }
 
-# Migrate from installer-based Wasp to npm-based Wasp.
 migrate_to_npm() {
     info "Migrating from installer-based Wasp to npm-based Wasp...\n"
 
@@ -107,7 +106,6 @@ migrate_to_npm() {
         done
     fi
 
-    # Create marker file (ensure directory exists)
     create_dir_if_missing "$WASP_LANG_DIR"
     touch "$NPM_MARKER_FILE" || die "Failed to create npm marker file at $NPM_MARKER_FILE"
 
