@@ -1,4 +1,4 @@
-name: Test installer
+name: Continuous Integration
 
 on:
   push:
@@ -26,15 +26,12 @@ jobs:
           - dash # Minimal `sh` implementation, good for testing POSIX compliance.
           - bash # The most common shell.
           - zsh # The default shell on macOS.
-        args:
-          - name: versioned
-            value: "-v 0.18.0"
         exclude:
           # Dash is not available on macOS.
           - { os: macos-latest, shell: dash }
           - { os: macos-15-intel, shell: dash }
 
-    name: Test installer (${{ matrix.os }}, ${{ matrix.shell }}, ${{ matrix.args.name }})
+    name: Test installer (${{ matrix.os }}, ${{ matrix.shell }})
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -43,179 +40,16 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Install shell
         if: runner.os == 'Linux'
         run: sudo apt-get install -y ${{ matrix.shell }}
 
-      - name: Edit PATH
-        run: echo "PATH=$PATH:$HOME/.local/bin" >> "$GITHUB_ENV"
-
-      - name: Run installer
-        run: ${{ matrix.shell }} ./installer.sh ${{ matrix.args.value }}
-
-      - run: wasp version
-
-  test-migrate-to-npm:
-    strategy:
-      matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
-          - macos-15-intel
-        shell:
-          - dash # Minimal `sh` implementation, good for testing POSIX compliance.
-          - bash # The most common shell.
-          - zsh # The default shell on macOS.
-        exclude:
-          # Dash is not available on macOS.
-          - { os: macos-latest, shell: dash }
-          - { os: macos-15-intel, shell: dash }
-
-    name: Test migrate-to-npm (${{ matrix.os }}, ${{ matrix.shell }})
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "22"
-
-      - name: Install shell
-        if: runner.os == 'Linux'
-        run: sudo apt-get install -y ${{ matrix.shell }}
-
-      - name: Edit PATH
-        run: echo "PATH=$PATH:$HOME/.local/bin" >> "$GITHUB_ENV"
-
-      - name: Install wasp first
-        run: ${{ matrix.shell }} ./installer.sh -v 0.18.0
-
-      - name: Verify wasp is installed
-        run: wasp version
-
-      - name: Run migrate-to-npm
-        run: ${{ matrix.shell }} ./installer.sh migrate-to-npm
-
-      - name: Verify npm marker file exists
-        run: test -f "$HOME/.local/share/wasp-lang/.uses-npm"
-
-      - name: Verify wasp binary is removed
-        run: test ! -f "$HOME/.local/bin/wasp"
-
-  test-version-rejection:
-    strategy:
-      matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
-          - macos-15-intel
-        shell:
-          - dash # Minimal `sh` implementation, good for testing POSIX compliance.
-          - bash # The most common shell.
-          - zsh # The default shell on macOS.
-        version:
-          - "0.21"
-          - "0.22"
-          - "1.1"
-        exclude:
-          # Dash is not available on macOS.
-          - { os: macos-latest, shell: dash }
-          - { os: macos-15-intel, shell: dash }
-
-    name: Test version rejection (${{ matrix.os }}, ${{ matrix.shell }}, ${{ matrix.version }})
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Install shell
-        if: runner.os == 'Linux'
-        run: sudo apt-get install -y ${{ matrix.shell }}
-
-      - name: Try to install version ${{ matrix.version }} (should fail)
-        run: |
-          if ${{ matrix.shell }} ./installer.sh -v ${{ matrix.version }}; then
-            echo "ERROR: Installer should have rejected version ${{ matrix.version }}"
-            exit 1
-          fi
-
-  test-bare-install-rejection:
-    strategy:
-      matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
-          - macos-15-intel
-        shell:
-          - dash # Minimal `sh` implementation, good for testing POSIX compliance.
-          - bash # The most common shell.
-          - zsh # The default shell on macOS.
-        exclude:
-          # Dash is not available on macOS.
-          - { os: macos-latest, shell: dash }
-          - { os: macos-15-intel, shell: dash }
-
-    name: Test bare install rejection (${{ matrix.os }}, ${{ matrix.shell }})
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Install shell
-        if: runner.os == 'Linux'
-        run: sudo apt-get install -y ${{ matrix.shell }}
-
-      - name: Try to install without version (should fail)
-        run: |
-          if ${{ matrix.shell }} ./installer.sh; then
-            echo "ERROR: Installer should have rejected bare install (no version)"
-            exit 1
-          fi
-
-  test-post-migration-rejection:
-    strategy:
-      matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
-          - macos-15-intel
-        shell:
-          - dash # Minimal `sh` implementation, good for testing POSIX compliance.
-          - bash # The most common shell.
-          - zsh # The default shell on macOS.
-        exclude:
-          # Dash is not available on macOS.
-          - { os: macos-latest, shell: dash }
-          - { os: macos-15-intel, shell: dash }
-
-    name: Test post-migration rejection (${{ matrix.os }}, ${{ matrix.shell }})
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "22"
-
-      - name: Install shell
-        if: runner.os == 'Linux'
-        run: sudo apt-get install -y ${{ matrix.shell }}
-
-      - name: Edit PATH
-        run: echo "PATH=$PATH:$HOME/.local/bin" >> "$GITHUB_ENV"
-
-      - name: Install wasp first
-        run: ${{ matrix.shell }} ./installer.sh -v 0.18.0
-
-      - name: Run migrate-to-npm
-        run: ${{ matrix.shell }} ./installer.sh migrate-to-npm
-
-      - name: Try to install after migration (should fail)
-        run: |
-          if ${{ matrix.shell }} ./installer.sh -v 0.18.0; then
-            echo "ERROR: Installer should have rejected install after migration to npm"
-            exit 1
-          fi
+      - name: Run tests
+        run: npm run test
+        env:
+          TEST_SHELL: ${{ matrix.shell }}

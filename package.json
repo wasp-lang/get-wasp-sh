@@ -1,0 +1,14 @@
+{
+  "name": "@wasp.sh/get-wasp-sh",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/node": "^22.19.9",
+    "execa": "^9.6.1",
+    "tempy": "^3.2.0",
+    "vitest": "^4.0.18"
+  },
+  "scripts": {
+    "test": "vitest"
+  }
+}
