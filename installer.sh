@@ -54,7 +54,7 @@ main() {
     if [ -n "$VERSION_ARG" ]; then
         # Check version restrictions - reject when requested version >= migration version
         if version_gte "$VERSION_ARG" "$NPM_MIGRATION_VERSION"; then
-            die "Wasp version $VERSION_ARG and later must be installed via npm.\n\nPlease run: npm install -g @wasp.sh/wasp-cli@$VERSION_ARG\n\nTo migrate from installer to npm, run:\n  curl -sSL https://get.wasp.sh/installer.sh | sh -s -- migrate-to-npm"
+            die "Wasp version $NPM_MIGRATION_VERSION and later must be installed via npm.\n\nPlease run: npm install -g @wasp.sh/wasp-cli@$VERSION_ARG\n\nTo migrate from installer to npm, run:\n  curl -sSL https://get.wasp.sh/installer.sh | sh -s -- migrate-to-npm"
         fi
 
         # Warn about installing old version
