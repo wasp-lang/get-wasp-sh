@@ -87,6 +87,54 @@ describe("migrator", () => {
     ));
 });
 
+describe("npm package", () => {
+  it("rejects installing when the installer was used", () =>
+    createInstallerEnvironment(async ({ HOME, waspBinary, npmMarker }) => {
+      await $(shell, [installerPath, "-v", "0.18.0"], { env: { HOME } });
+
+      await expect(
+        $(
+          "npm",
+          [
+            "install",
+            "-g",
+            // TODO: Update this to the published package once this PR is merged and published
+            "https://pkg.pr.new/@wasp.sh/wasp-cli@3711",
+          ],
+          { env: { HOME } },
+        ),
+      ).rejects.toMatchObject({
+        exitCode: 1,
+        stderr: expect.stringContaining(
+          "Detected an existing installer-based Wasp installation.",
+        ),
+      });
+
+      expect(waspBinary).toBeExecutable();
+      expect(npmMarker).not.toExist();
+    }));
+
+  it("installs when the installer was used and then migrated", () =>
+    createInstallerEnvironment(async ({ HOME, waspBinary, npmMarker }) => {
+      await $(shell, [installerPath, "-v", "0.18.0"], { env: { HOME } });
+      await $(shell, [installerPath, "migrate-to-npm"], { env: { HOME } });
+
+      await $(
+        "npm",
+        [
+          "install",
+          "-g",
+          // TODO: Update this to the published package once this PR is merged and published
+          "https://pkg.pr.new/@wasp.sh/wasp-cli@3711",
+        ],
+        { env: { HOME } },
+      );
+
+      expect(waspBinary).not.toExist();
+      expect(npmMarker).toBeFile();
+    }));
+});
+
 async function createInstallerEnvironment(
   fn: (paths: ReturnType<typeof calculatePaths>) => any,
 ) {
