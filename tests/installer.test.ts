@@ -91,14 +91,14 @@ describe("migrator", () => {
 });
 
 async function createTemporaryInstallerTestEnvironment<T>(
-  fn: (paths: ReturnType<typeof calculatePaths>) => Promise<T>,
+  fn: (paths: ReturnType<typeof calculateWaspPaths>) => Promise<T>,
 ) {
   return await temporaryDirectoryTask(async (tmpDir) =>
-    fn(calculatePaths(tmpDir)),
+    fn(calculateWaspPaths(tmpDir)),
   );
 }
 
-function calculatePaths(HOME: string) {
+function calculateWaspPaths(HOME: string) {
   const waspBinary = path.join(HOME, ".local/bin/wasp");
   const waspDataDir = path.join(HOME, ".local/share/wasp-lang");
   const waspVersionDir = (version: string) => path.join(waspDataDir, version);
