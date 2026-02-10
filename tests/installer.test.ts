@@ -88,8 +88,8 @@ describe("migrator", () => {
     ));
 });
 
-async function createInstallerEnvironment(
-  fn: (paths: ReturnType<typeof calculatePaths>) => any,
+async function createInstallerEnvironment<T>(
+  fn: (paths: ReturnType<typeof calculatePaths>) => Promise<T>,
 ) {
   return await temporaryDirectoryTask(async (tmpDir) =>
     fn(calculatePaths(tmpDir)),
