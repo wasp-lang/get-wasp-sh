@@ -11,17 +11,18 @@ assert(shell, "TEST_SHELL or SHELL environment variables are not set");
 const installerPath = path.resolve(import.meta.dirname, "../installer.sh");
 
 describe("installer", () => {
-  it("installs specific version", () =>
+  it.each(["0.18.0", "0.20.1"])("installs specific version (%s)", (version) =>
     createInstallerEnvironment(async ({ HOME, waspBinary, waspVersionDir }) => {
-      await $(shell, [installerPath, "-v", "0.18.0"], { env: { HOME } });
+      await $(shell, [installerPath, "-v", version], { env: { HOME } });
 
       expect(waspBinary).toBeExecutable();
-      expect(waspVersionDir("0.18.0")).toBeDirectory();
+      expect(waspVersionDir(version)).toBeDirectory();
 
       expect(await $(waspBinary, ["version"])).toMatchObject({
-        stdout: expect.stringContaining("0.18.0"),
+        stdout: expect.stringContaining(version),
       });
-    }));
+    }),
+  );
 
   it("fails when version is not specified", () =>
     createInstallerEnvironment(async ({ HOME, waspBinary }) => {
