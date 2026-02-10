@@ -56,18 +56,6 @@ main() {
         exit 0
     fi
 
-    # Require version argument if specified in VERSION_ARG
-    if [ -n "$VERSION_ARG" ]; then
-        # Check version restrictions - reject when requested version >= migration version
-        if version_gte "$VERSION_ARG" "$NPM_MIGRATION_VERSION"; then
-            die "Wasp version $NPM_MIGRATION_VERSION and later must be installed via npm.\n\nIf you've already installed Wasp from installer, please migrate to the npm method first:\n  curl -sSL https://get.wasp.sh/installer.sh | sh -s -- migrate-to-npm\n\nTo install Wasp through npm, please run:\n  npm install -g @wasp.sh/wasp-cli@$VERSION_ARG\n\nYou can read more about this migration at:\n  https://wasp.sh/docs/guides/legacy/installer"
-        fi
-
-        # Warn about installing old version
-        info "${RED}WARNING${RESET}: You are installing an older version of Wasp ($VERSION_ARG)."
-        info "Starting with Wasp $NPM_MIGRATION_VERSION, the installer is deprecated and npm is the preferred installation method. You can read more about the migration at:\n  https://wasp.sh/docs/guides/legacy/installer"
-    fi
-
     # Require version argument
     if [ -z "$VERSION_ARG" ]; then
         die "A version argument is required.\n\nUsage: curl -sSL https://get.wasp.sh/installer.sh | sh -s -- -v <version>\n\nFor Wasp $NPM_MIGRATION_VERSION and later, please use npm:\n  npm install -g @wasp.sh/wasp-cli"
