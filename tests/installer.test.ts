@@ -12,7 +12,7 @@ const installerPath = path.resolve(import.meta.dirname, "../installer.sh");
 
 describe("installer", () => {
   it.each(["0.18.0", "0.20.1"])(
-    "installs specific supported version (%s)",
+    "installs specific supported version (%s)", // Supported versions are <0.21
     (version) =>
       createTemporaryInstallerTestEnvironment(async ({ paths, env }) => {
         await $(shell, [installerPath, "-v", version], { env });
