@@ -127,19 +127,6 @@ version_gte() {
     [ "$v1_minor" -ge "$v2_minor" ]
 }
 
-# Compare two semver versions (major.minor only).
-# Returns 0 (true) if v1 >= v2, 1 (false) otherwise.
-version_gte() {
-    v1_major=$(echo "$1" | cut -d. -f1)
-    v1_minor=$(echo "$1" | cut -d. -f2)
-    v2_major=$(echo "$2" | cut -d. -f1)
-    v2_minor=$(echo "$2" | cut -d. -f2)
-
-    [ "$v1_major" -gt "$v2_major" ] && return 0
-    [ "$v1_major" -lt "$v2_major" ] && return 1
-    [ "$v1_minor" -ge "$v2_minor" ]
-}
-
 install_version() {
     version_name=$1
     data_dst_dir=$2
