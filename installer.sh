@@ -11,6 +11,8 @@ HOME_LOCAL_BIN="$HOME/.local/bin"
 HOME_LOCAL_SHARE="$HOME/.local/share"
 WASP_LANG_DIR="$HOME_LOCAL_SHARE/wasp-lang"
 NPM_MARKER_FILE="$WASP_LANG_DIR/.uses-npm"
+
+MIGRATE_TO_NPM_ARG=
 VERSION_ARG=
 
 RED="\033[31m"
@@ -29,7 +31,7 @@ while [ $# -gt 0 ]; do
         shift 2
         ;;
     migrate-to-npm)
-        COMMAND="migrate-to-npm"
+        MIGRATE_TO_NPM_ARG=1
         shift
         ;;
     *)
@@ -40,11 +42,15 @@ while [ $# -gt 0 ]; do
 done
 
 main() {
+    if [ -n "$VERSION_ARG" ] && [ -n "$MIGRATE_TO_NPM_ARG" ]; then
+        die "Error: Cannot use both -v/--version and migrate-to-npm arguments together.\n  Use either -v/--version to install a specific version, or migrate-to-npm to migrate to npm."
+    fi
+
     if [ -f "$NPM_MARKER_FILE" ]; then
         die "You are already using Wasp through npm.\n\nTo install Wasp, run:\n  npm install -g @wasp.sh/wasp-cli\n\nIf you need to use the installer again, first uninstall Wasp through npm, and remove the marker file at $NPM_MARKER_FILE."
     fi
 
-    if [ "$COMMAND" = "migrate-to-npm" ]; then
+    if [ -n "$MIGRATE_TO_NPM_ARG" ]; then
         migrate_to_npm
         exit 0
     fi
