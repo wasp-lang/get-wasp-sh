@@ -36,7 +36,7 @@ describe("installer", () => {
     }));
 
   it.each(["0.21", "0.22", "1.0", "1.1"])(
-    "rejects installing newer versions (%s)",
+    "rejects installing newer version (%s)",
     (version) =>
       createInstallerEnvironment(async ({ HOME, waspBinary }) => {
         await expect(
