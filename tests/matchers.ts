@@ -21,7 +21,7 @@ expect.extend({
     );
 
     return {
-      pass: exists === true,
+      pass: exists,
       message: () => `expected ${received} to${this.isNot ? " not" : ""} exist`,
     };
   },
@@ -33,7 +33,7 @@ expect.extend({
     );
 
     return {
-      pass: isFile === true,
+      pass: isFile,
       message: () =>
         `expected ${received} to${this.isNot ? " not" : ""} be a file`,
     };
@@ -46,7 +46,7 @@ expect.extend({
     );
 
     return {
-      pass: isExecutable === true,
+      pass: isExecutable,
       message: () =>
         `expected ${received} to${this.isNot ? " not" : ""} be executable`,
     };
@@ -59,7 +59,7 @@ expect.extend({
     );
 
     return {
-      pass: isDirectory === true,
+      pass: isDirectory,
       message: () =>
         `expected ${received} to${this.isNot ? " not" : ""} be a directory`,
     };
