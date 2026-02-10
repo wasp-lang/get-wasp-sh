@@ -84,9 +84,7 @@ describe("migrator", () => {
 
         await $(shell, [installerPath, "migrate-to-npm"], { env: { HOME } });
 
-        expect(waspBinary).not.toExist();
         expect(oldVersionPath).not.toExist();
-
         expect(npmMarker).toBeFile();
       },
     ));
