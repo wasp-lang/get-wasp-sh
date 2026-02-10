@@ -12,13 +12,13 @@ const installerPath = path.resolve(import.meta.dirname, "../installer.sh");
 
 describe("installer", () => {
   it.each(["0.18.0", "0.20.1"])(
-    "installs specific supported version (%s)",
+    "installs specific supported version (%s)", // Supported versions are <0.21
     (version) =>
       createTemporaryInstallerTestEnvironment(async ({ paths, env }) => {
         await $(shell, [installerPath, "-v", version], { env });
 
         expect(paths.installer.waspBinaryFile).toBeExecutable();
-        expect(paths.installer.waspVersionDir(version)).toBeDirectory();
+        expect(paths.installer.getWaspVersionDir(version)).toBeDirectory();
 
         expect(
           await $(paths.installer.waspBinaryFile, ["version"]),
@@ -76,7 +76,7 @@ describe("installer", () => {
 describe("migrator", () => {
   it("migrates from old version to new version", () =>
     createTemporaryInstallerTestEnvironment(async ({ paths, env }) => {
-      const oldVersionPath = paths.installer.waspVersionDir("0.18.0");
+      const oldVersionPath = paths.installer.getWaspVersionDir("0.18.0");
       await fs.mkdir(oldVersionPath, { recursive: true });
 
       await $(shell, [installerPath, "migrate-to-npm"], { env });
@@ -172,7 +172,7 @@ function calculateWaspEnvironment(HOME: string) {
       waspDataDir,
       installer: {
         waspBinaryFile: path.join(HOME, ".local/bin/wasp"),
-        waspVersionDir: (version: string) => path.join(waspDataDir, version),
+        getWaspVersionDir: (version: string) => path.join(waspDataDir, version),
       },
       npm: {
         markerFile: path.join(waspDataDir, ".uses-npm"),
