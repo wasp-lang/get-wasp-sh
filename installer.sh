@@ -68,7 +68,7 @@ main() {
 
     # Warn about installing old version
     info "${RED}WARNING${RESET}: You are installing an older version of Wasp ($VERSION_ARG)."
-    info "Starting with Wasp $NPM_MIGRATION_VERSION, the installer is deprecated and npm is the preferred installation method:\n  npm install -g @wasp.sh/wasp-cli\n\nYou can read more about this migration at:\n  https://wasp.sh/docs/guides/legacy/installer"
+    info "Starting with Wasp $NPM_MIGRATION_VERSION, the installer is deprecated and npm is the preferred installation method. You can read more about the migration at:\n  https://wasp.sh/docs/guides/legacy/installer"
 
     trap cleanup_temp_dir EXIT
     send_telemetry >/dev/null 2>&1 &
