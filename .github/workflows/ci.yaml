@@ -1,0 +1,55 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  lint:
+    name: Lint script
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+      - run: shellcheck installer.sh
+
+  test:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - macos-15-intel
+        shell:
+          - dash # Minimal `sh` implementation, good for testing POSIX compliance.
+          - bash # The most common shell.
+          - zsh # The default shell on macOS.
+        exclude:
+          # Dash is not available on macOS.
+          - { os: macos-latest, shell: dash }
+          - { os: macos-15-intel, shell: dash }
+
+    name: Test installer (${{ matrix.os }}, ${{ matrix.shell }})
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install shell
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y ${{ matrix.shell }}
+
+      - name: Run tests
+        run: npm run test
+        env:
+          TEST_SHELL: ${{ matrix.shell }}
