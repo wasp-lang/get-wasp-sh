@@ -12,20 +12,22 @@ const installerPath = path.resolve(import.meta.dirname, "../installer.sh");
 
 describe("installer", () => {
   it.each(["0.18.0", "0.20.1"])("installs specific version (%s)", (version) =>
-    createInstallerEnvironment(async ({ HOME, waspBinary, waspVersionDir }) => {
-      await $(shell, [installerPath, "-v", version], { env: { HOME } });
+    createTemporaryInstallerTestEnvironment(
+      async ({ HOME, waspBinary, waspVersionDir }) => {
+        await $(shell, [installerPath, "-v", version], { env: { HOME } });
 
-      expect(waspBinary).toBeExecutable();
-      expect(waspVersionDir(version)).toBeDirectory();
+        expect(waspBinary).toBeExecutable();
+        expect(waspVersionDir(version)).toBeDirectory();
 
-      expect(await $(waspBinary, ["version"])).toMatchObject({
-        stdout: expect.stringContaining(version),
-      });
-    }),
+        expect(await $(waspBinary, ["version"])).toMatchObject({
+          stdout: expect.stringContaining(version),
+        });
+      },
+    ),
   );
 
   it("fails when version is not specified", () =>
-    createInstallerEnvironment(async ({ HOME, waspBinary }) => {
+    createTemporaryInstallerTestEnvironment(async ({ HOME, waspBinary }) => {
       await expect(
         $(shell, [installerPath], { env: { HOME } }),
       ).rejects.toMatchObject({
@@ -39,7 +41,7 @@ describe("installer", () => {
   it.each(["0.21", "0.22", "1.0", "1.1"])(
     "rejects installing newer version (%s)",
     (version) =>
-      createInstallerEnvironment(async ({ HOME, waspBinary }) => {
+      createTemporaryInstallerTestEnvironment(async ({ HOME, waspBinary }) => {
         await expect(
           $(shell, [installerPath, "-v", version], { env: { HOME } }),
         ).rejects.toMatchObject({
@@ -54,26 +56,28 @@ describe("installer", () => {
   );
 
   it("rejects installing when the npm marker file is present", () =>
-    createInstallerEnvironment(async ({ HOME, npmMarker, waspBinary }) => {
-      await fs.mkdir(path.dirname(npmMarker), { recursive: true });
-      await fs.writeFile(npmMarker, "");
+    createTemporaryInstallerTestEnvironment(
+      async ({ HOME, npmMarker, waspBinary }) => {
+        await fs.mkdir(path.dirname(npmMarker), { recursive: true });
+        await fs.writeFile(npmMarker, "");
 
-      await expect(
-        $(shell, [installerPath, "-v", "0.18.0"], { env: { HOME } }),
-      ).rejects.toMatchObject({
-        exitCode: 1,
-        stderr: expect.stringContaining(
-          "You are already using Wasp through npm.",
-        ),
-      });
+        await expect(
+          $(shell, [installerPath, "-v", "0.18.0"], { env: { HOME } }),
+        ).rejects.toMatchObject({
+          exitCode: 1,
+          stderr: expect.stringContaining(
+            "You are already using Wasp through npm.",
+          ),
+        });
 
-      expect(waspBinary).not.toExist();
-    }));
+        expect(waspBinary).not.toExist();
+      },
+    ));
 });
 
 describe("migrator", () => {
   it("migrates from old version to new version", () =>
-    createInstallerEnvironment(
+    createTemporaryInstallerTestEnvironment(
       async ({ HOME, waspVersionDir, waspBinary, npmMarker }) => {
         const oldVersionPath = waspVersionDir("0.18.0");
         await fs.mkdir(oldVersionPath, { recursive: true });
@@ -88,7 +92,7 @@ describe("migrator", () => {
     ));
 });
 
-async function createInstallerEnvironment<T>(
+async function createTemporaryInstallerTestEnvironment<T>(
   fn: (paths: ReturnType<typeof calculatePaths>) => Promise<T>,
 ) {
   return await temporaryDirectoryTask(async (tmpDir) =>
