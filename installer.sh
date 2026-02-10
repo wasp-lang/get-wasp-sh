@@ -47,7 +47,7 @@ main() {
     fi
 
     if [ -f "$NPM_MARKER_FILE" ]; then
-        die "You are already using Wasp through npm.\n\nTo install Wasp, run:\n  npm install -g @wasp.sh/wasp-cli\n\nIf you need to use the installer again, first uninstall Wasp through npm, and remove the marker file at $NPM_MARKER_FILE."
+        die "You are already using Wasp through npm.\n\nTo install the latest version of Wasp, run:\n  npm install -g @wasp.sh/wasp-cli\n\nIf you need to use the installer again, check our guide at:\n  https://wasp.sh/docs/guides/legacy/installer"
     fi
 
     if [ -n "$MIGRATE_TO_NPM_ARG" ]; then
