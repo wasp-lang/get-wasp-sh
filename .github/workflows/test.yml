@@ -108,3 +108,40 @@ jobs:
 
       - name: Verify wasp-lang doesn't contain any version directories
         run: test -z "$(find "$HOME/.local/share/wasp-lang" -mindepth 1 -maxdepth 1 -type d)"
+
+  test-version-rejection:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - macos-15-intel
+        shell:
+          - dash # Minimal `sh` implementation, good for testing POSIX compliance.
+          - bash # The most common shell.
+          - zsh # The default shell on macOS.
+        version:
+          - "0.21"
+          - "0.22"
+          - "1.1"
+        exclude:
+          # Dash is not available on macOS.
+          - { os: macos-latest, shell: dash }
+          - { os: macos-15-intel, shell: dash }
+
+    name: Test version rejection (${{ matrix.os }}, ${{ matrix.shell }}, ${{ matrix.version }})
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install shell
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y ${{ matrix.shell }}
+
+      - name: Try to install version ${{ matrix.version }} (should fail)
+        run: |
+          if ${{ matrix.shell }} ./installer.sh -v ${{ matrix.version }}; then
+            echo "ERROR: Installer should have rejected version ${{ matrix.version }}"
+            exit 1
+          fi
