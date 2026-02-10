@@ -104,6 +104,9 @@ jobs:
       - name: Verify wasp binary is removed
         run: test ! -f "$HOME/.local/bin/wasp"
 
+      - name: Verify wasp-lang doesn't contain any version directories
+        run: test -z "$(find "$HOME/.local/share/wasp-lang" -mindepth 1 -maxdepth 1 -type d)"
+
   test-version-rejection:
     strategy:
       matrix:
