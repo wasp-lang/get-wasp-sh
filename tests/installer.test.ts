@@ -94,6 +94,21 @@ describe("migrator", () => {
         expect(npmMarkerFile).toBeFile();
       },
     ));
+
+  it("refuses to migrate when an npm marker file is already present", () =>
+    createTemporaryInstallerTestEnvironment(async ({ HOME, npmMarkerFile }) => {
+      await fs.mkdir(path.dirname(npmMarkerFile), { recursive: true });
+      await fs.writeFile(npmMarkerFile, "");
+
+      await expect(
+        $(shell, [installerPath, "migrate-to-npm"], { env: { HOME } }),
+      ).rejects.toMatchObject({
+        exitCode: 1,
+        stderr: expect.stringContaining(
+          "You are already using Wasp through npm.",
+        ),
+      });
+    }));
 });
 
 async function createTemporaryInstallerTestEnvironment<T>(
