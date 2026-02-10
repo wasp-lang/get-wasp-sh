@@ -11,7 +11,7 @@ HOME_LOCAL_BIN="$HOME/.local/bin"
 HOME_LOCAL_SHARE="$HOME/.local/share"
 WASP_LANG_DIR="$HOME_LOCAL_SHARE/wasp-lang"
 NPM_MARKER_FILE="$WASP_LANG_DIR/.uses-npm"
-NPM_MIGRATION_VERSION="0.21" # First version we'll refuse to install
+NPM_MIGRATION_VERSION="0.21" # First version we'll refuse to install through installer
 
 MIGRATE_TO_NPM_ARG=
 VERSION_ARG=
