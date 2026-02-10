@@ -13,13 +13,13 @@ const installerPath = path.resolve(import.meta.dirname, "../installer.sh");
 describe("installer", () => {
   it.each(["0.18.0", "0.20.1"])("installs specific version (%s)", (version) =>
     createTemporaryInstallerTestEnvironment(
-      async ({ HOME, waspBinary, waspVersionDir }) => {
+      async ({ HOME, installerWaspBinary, installerWaspVersionDir }) => {
         await $(shell, [installerPath, "-v", version], { env: { HOME } });
 
-        expect(waspBinary).toBeExecutable();
-        expect(waspVersionDir(version)).toBeDirectory();
+        expect(installerWaspBinary).toBeExecutable();
+        expect(installerWaspVersionDir(version)).toBeDirectory();
 
-        expect(await $(waspBinary, ["version"])).toMatchObject({
+        expect(await $(installerWaspBinary, ["version"])).toMatchObject({
           stdout: expect.stringContaining(version),
         });
       },
@@ -27,39 +27,43 @@ describe("installer", () => {
   );
 
   it("fails when version is not specified", () =>
-    createTemporaryInstallerTestEnvironment(async ({ HOME, waspBinary }) => {
-      await expect(
-        $(shell, [installerPath], { env: { HOME } }),
-      ).rejects.toMatchObject({
-        exitCode: 1,
-        stderr: expect.stringContaining("A version argument is required."),
-      });
+    createTemporaryInstallerTestEnvironment(
+      async ({ HOME, installerWaspBinary }) => {
+        await expect(
+          $(shell, [installerPath], { env: { HOME } }),
+        ).rejects.toMatchObject({
+          exitCode: 1,
+          stderr: expect.stringContaining("A version argument is required."),
+        });
 
-      expect(waspBinary).not.toExist();
-    }));
+        expect(installerWaspBinary).not.toExist();
+      },
+    ));
 
   it.each(["0.21", "0.22", "1.0", "1.1"])(
     "rejects installing newer version (%s)",
     (version) =>
-      createTemporaryInstallerTestEnvironment(async ({ HOME, waspBinary }) => {
-        await expect(
-          $(shell, [installerPath, "-v", version], { env: { HOME } }),
-        ).rejects.toMatchObject({
-          exitCode: 1,
-          stderr: expect.stringContaining(
-            "Wasp version 0.21 and later must be installed via npm.",
-          ),
-        });
+      createTemporaryInstallerTestEnvironment(
+        async ({ HOME, installerWaspBinary }) => {
+          await expect(
+            $(shell, [installerPath, "-v", version], { env: { HOME } }),
+          ).rejects.toMatchObject({
+            exitCode: 1,
+            stderr: expect.stringContaining(
+              "Wasp version 0.21 and later must be installed via npm.",
+            ),
+          });
 
-        expect(waspBinary).not.toExist();
-      }),
+          expect(installerWaspBinary).not.toExist();
+        },
+      ),
   );
 
   it("rejects installing when the npm marker file is present", () =>
     createTemporaryInstallerTestEnvironment(
-      async ({ HOME, npmMarker, waspBinary }) => {
-        await fs.mkdir(path.dirname(npmMarker), { recursive: true });
-        await fs.writeFile(npmMarker, "");
+      async ({ HOME, npmMarkerFile, installerWaspBinary }) => {
+        await fs.mkdir(path.dirname(npmMarkerFile), { recursive: true });
+        await fs.writeFile(npmMarkerFile, "");
 
         await expect(
           $(shell, [installerPath, "-v", "0.18.0"], { env: { HOME } }),
@@ -70,7 +74,7 @@ describe("installer", () => {
           ),
         });
 
-        expect(waspBinary).not.toExist();
+        expect(installerWaspBinary).not.toExist();
       },
     ));
 });
@@ -78,14 +82,14 @@ describe("installer", () => {
 describe("migrator", () => {
   it("migrates from old version to new version", () =>
     createTemporaryInstallerTestEnvironment(
-      async ({ HOME, waspVersionDir, waspBinary, npmMarker }) => {
-        const oldVersionPath = waspVersionDir("0.18.0");
+      async ({ HOME, installerWaspVersionDir, npmMarkerFile }) => {
+        const oldVersionPath = installerWaspVersionDir("0.18.0");
         await fs.mkdir(oldVersionPath, { recursive: true });
 
         await $(shell, [installerPath, "migrate-to-npm"], { env: { HOME } });
 
         expect(oldVersionPath).not.toExist();
-        expect(npmMarker).toBeFile();
+        expect(npmMarkerFile).toBeFile();
       },
     ));
 });
@@ -99,10 +103,17 @@ async function createTemporaryInstallerTestEnvironment<T>(
 }
 
 function calculateWaspPaths(HOME: string) {
-  const waspBinary = path.join(HOME, ".local/bin/wasp");
+  const installerWaspBinary = path.join(HOME, ".local/bin/wasp");
   const waspDataDir = path.join(HOME, ".local/share/wasp-lang");
-  const waspVersionDir = (version: string) => path.join(waspDataDir, version);
-  const npmMarker = path.join(waspDataDir, ".uses-npm");
+  const installerWaspVersionDir = (version: string) =>
+    path.join(waspDataDir, version);
+  const npmMarkerFile = path.join(waspDataDir, ".uses-npm");
 
-  return { HOME, waspBinary, waspDataDir, waspVersionDir, npmMarker };
+  return {
+    HOME,
+    installerWaspBinary,
+    waspDataDir,
+    installerWaspVersionDir,
+    npmMarkerFile,
+  };
 }
