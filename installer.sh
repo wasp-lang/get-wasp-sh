@@ -103,7 +103,7 @@ migrate_to_npm() {
     touch "$NPM_MARKER_FILE" || die "Failed to create npm marker file at $NPM_MARKER_FILE"
 
     info "\n${GREEN}Ready for the next step!${RESET}\n"
-    info "Now you can install Wasp via npm, running the following command:"
+    info "Now you can install Wasp via npm by running the following command:"
     info "  ${BOLD}npm install -g @wasp.sh/wasp-cli${RESET}\n"
 }
 
