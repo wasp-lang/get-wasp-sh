@@ -167,6 +167,7 @@ function calculateWaspEnvironment(HOME: string) {
     env: {
       HOME,
       npm_config_prefix: npmPrefix,
+      WASP_TELEMETRY_DISABLE: 1, // We don't want to send telemetry from tests
     },
     paths: {
       waspDataDir,
