@@ -107,16 +107,7 @@ describe("npm package", () => {
       await $(shell, [installerPath, "-v", "0.18.0"], { env });
 
       await expect(
-        $(
-          "npm",
-          [
-            "install",
-            "-g",
-            // TODO: Update this to the published package once this PR is merged and published
-            "https://pkg.pr.new/@wasp.sh/wasp-cli@3711",
-          ],
-          { env },
-        ),
+        $("npm", ["install", "-g", "@wasp.sh/wasp-cli@0.21"], { env }),
       ).rejects.toMatchObject({
         exitCode: 1,
         stderr: expect.stringContaining(
@@ -134,16 +125,7 @@ describe("npm package", () => {
       await $(shell, [installerPath, "-v", "0.18.0"], { env });
       await $(shell, [installerPath, "migrate-to-npm"], { env });
 
-      await $(
-        "npm",
-        [
-          "install",
-          "-g",
-          // TODO: Update this to the published package once this PR is merged and published
-          "https://pkg.pr.new/@wasp.sh/wasp-cli@3711",
-        ],
-        { env },
-      );
+      await $("npm", ["install", "-g", "@wasp.sh/wasp-cli@0.21"], { env });
 
       expect(paths.installer.waspBinaryFile).not.toExist();
       expect(paths.npm.markerFile).toBeFile();
