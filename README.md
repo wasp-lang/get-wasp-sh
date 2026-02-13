@@ -1,3 +1,7 @@
+> [!IMPORTANT]
+> This script is no longer the recommended way to install Wasp on your system.
+> Check [the Legacy Installer guide](https://wasp.sh/docs/guides/legacy/installer) for migration instructions.
+
 # get-wasp
 
 This repo is used as a way to publish static wasp resources, primarily installer script.
