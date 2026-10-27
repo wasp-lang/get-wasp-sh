@@ -12,6 +12,7 @@ HOME_LOCAL_SHARE="$HOME/.local/share"
 WASP_LANG_DIR="$HOME_LOCAL_SHARE/wasp-lang"
 NPM_MARKER_FILE="$WASP_LANG_DIR/.uses-npm"
 NPM_MIGRATION_VERSION="0.21" # First version we'll refuse to install through installer
+NPM_SCOPE_MIGRATION_VERSION="0.27" # First version published as @wasp/cli
 
 MIGRATE_TO_NPM_ARG=
 VERSION_ARG=
@@ -48,7 +49,7 @@ main() {
     fi
 
     if [ -f "$NPM_MARKER_FILE" ]; then
-        die "You are already using Wasp through npm.\n\nTo install the latest version of Wasp, run:\n  npm install -g @wasp.sh/wasp-cli\n\nIf you need to use the installer again, check our guide at:\n  https://wasp.sh/docs/guides/legacy/installer"
+        die "You are already using Wasp through npm.\n\nTo install the latest version of Wasp, run:\n  npm install -g @wasp/cli\n\nIf you need to use the installer again, check our guide at:\n  https://wasp.sh/docs/guides/legacy/installer"
     fi
 
     if [ -n "$MIGRATE_TO_NPM_ARG" ]; then
@@ -58,12 +59,12 @@ main() {
 
     # Require version argument
     if [ -z "$VERSION_ARG" ]; then
-        die "A version argument is required.\n\nUsage: curl -sSL https://get.wasp.sh/installer.sh | sh -s -- -v <version>\n\nFor Wasp $NPM_MIGRATION_VERSION and later, please use npm:\n  npm install -g @wasp.sh/wasp-cli"
+        die "A version argument is required.\n\nUsage: curl -sSL https://get.wasp.sh/installer.sh | sh -s -- -v <version>\n\nFor Wasp $NPM_MIGRATION_VERSION and later, please use npm:\n  npm install -g @wasp/cli"
     fi
 
     # Check version restrictions - reject when requested version >= migration version
     if version_gte "$VERSION_ARG" "$NPM_MIGRATION_VERSION"; then
-        die "Wasp version $NPM_MIGRATION_VERSION and later must be installed via npm.\n\nIf you've already installed Wasp from installer, please migrate to the npm method first:\n  curl -sSL https://get.wasp.sh/installer.sh | sh -s -- migrate-to-npm\n\nTo install Wasp through npm, please run:\n  npm install -g @wasp.sh/wasp-cli@$VERSION_ARG\n\nYou can read more about this migration at:\n  https://wasp.sh/docs/guides/legacy/installer"
+        die "Wasp version $NPM_MIGRATION_VERSION and later must be installed via npm.\n\nIf you've already installed Wasp from installer, please migrate to the npm method first:\n  curl -sSL https://get.wasp.sh/installer.sh | sh -s -- migrate-to-npm\n\nTo install Wasp through npm, please run:\n  npm install -g $(npm_package_for_version "$VERSION_ARG")@$VERSION_ARG\n\nYou can read more about this migration at:\n  https://wasp.sh/docs/guides/legacy/installer"
     fi
 
     # Warn about installing old version
@@ -111,7 +112,17 @@ migrate_to_npm() {
 
     info "\n${GREEN}Ready for the next step!${RESET}\n"
     info "Now you can install Wasp via npm by running the following command:"
-    info "  ${BOLD}npm install -g @wasp.sh/wasp-cli${RESET}\n"
+    info "  ${BOLD}npm install -g @wasp/cli${RESET}\n"
+}
+
+# Wasp versions before $NPM_SCOPE_MIGRATION_VERSION are published under the old
+# "@wasp.sh/wasp-cli" package name.
+npm_package_for_version() {
+    if version_gte "$1" "$NPM_SCOPE_MIGRATION_VERSION"; then
+        echo "@wasp/cli"
+    else
+        echo "@wasp.sh/wasp-cli"
+    fi
 }
 
 # Compare two semver versions (major.minor only).
